@@ -1,0 +1,2298 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>SideOnk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Oswald:wght@500;600&family=Literata:wght@400;500&family=Caveat:wght@500;600&display=swap">
+<style>
+/* Layout: Danya's PC desktop under a rainy Zastavynsk skyline. Floating windows (one fullscreen app on a phone), a day-by-day story reader, a memory-trust meter that falls with every glitch day. Committed dark look, accent follows the chosen branch. */
+:root{
+  --bg:#0b0e11; --bg2:#11161b; --panel:#171d23; --panel2:#1f272f; --line:#2c3741;
+  --fg:#d3d9de; --dim:#8c99a4; --white:#f1f3f4;
+  --anya:#eba7c6; --olya:#e38a2e; --roma:#d6504a; --danya:#e9ecee; --other:#8fa6bd;
+  --ok:#86b592; --warn:#d8b45c; --unk:#8da4cf;
+  --acc:#e9ecee;
+  --f-display:"Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --bar:52px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+#desk{position:relative;z-index:1;height:100%;padding-bottom:var(--bar);display:flex;flex-direction:column;gap:16px;padding-top:20px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.top h1{margin:0;font:600 clamp(44px,9vw,92px)/.9 var(--f-display);letter-spacing:.06em;color:var(--white);text-transform:uppercase;text-shadow:0 0 0 transparent;animation:flick 9s steps(1) infinite}
+@keyframes flick{0%,93%,100%{text-shadow:0 0 0 transparent;transform:none}94%{text-shadow:3px 0 var(--roma),-3px 0 var(--unk);transform:translateX(2px)}95%{text-shadow:-2px 0 var(--roma),2px 0 var(--unk);transform:translateX(-2px)}96%{text-shadow:0 0 0 transparent;transform:none}}
+.sub{margin:10px 0 0;font:500 12px/1.4 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.hint{margin:6px 0 0;max-width:46ch;color:var(--fg);font-size:14px}
+.now{min-width:230px;max-width:300px;padding:12px 14px;background:rgba(11,14,17,.72);border:1px solid var(--line);border-left:3px solid var(--acc);backdrop-filter:blur(3px);display:flex;flex-direction:column;gap:6px;transition:border-color .6s}
+.now small{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.now b{font:500 20px/1.15 var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:var(--white)}
+.now .btn{margin-top:4px}
+#icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-width:720px;align-content:start;overflow:auto;min-height:0}
+.ico{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;background:rgba(11,14,17,.55);border:1px solid transparent;border-radius:2px;color:var(--fg);text-align:center;font:500 12px/1.2 var(--f-mono);transition:background .2s,border-color .2s,transform .2s}
+.ico svg{width:30px;height:30px;stroke:var(--c,var(--white));fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
+.ico:hover{border-color:var(--line);background:rgba(23,29,35,.85)}
+.ico:hover svg{transform:translateY(-2px)}
+.ico:active{transform:scale(.96)}
+.ico.run::after{content:"";position:absolute;bottom:3px;width:14px;height:2px;background:var(--c,var(--white))}
+.ico.nw::before{content:"";position:absolute;top:6px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--warn);animation:pu 2s infinite}
+#wins{position:absolute;inset:0 0 var(--bar) 0;pointer-events:none}
+.win{position:absolute;pointer-events:auto;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:2px;box-shadow:0 18px 50px rgba(0,0,0,.55);overflow:hidden;resize:both;min-width:280px;min-height:220px;max-width:100%;max-height:100%;animation:wIn .24s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 100%}
+.win[data-on="1"]{border-color:var(--acc);box-shadow:0 22px 60px rgba(0,0,0,.65),0 0 0 1px color-mix(in srgb,var(--acc) 25%,transparent)}
+.win.out{animation:wOut .18s ease-in forwards}
+.win.min{display:none}
+.win.max{left:0!important;top:0!important;width:100%!important;height:100%!important;resize:none}
+@keyframes wIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes wOut{to{opacity:0;transform:translateY(10px) scale(.97)}}
+.win.gl .wb{animation:wgl .5s steps(2) 2}
+@keyframes wgl{0%{transform:none;filter:none}25%{transform:translateX(4px);filter:hue-rotate(40deg) contrast(1.2)}50%{transform:translate(-3px,1px);filter:invert(.08)}75%{transform:translateX(2px)}100%{transform:none;filter:none}}
+.tb{display:flex;align-items:center;justify-content:space-between;gap:8px;height:36px;padding-left:12px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none}
+.tb:active{cursor:grabbing}
+.tt{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.win[data-on="1"] .tt{color:var(--white)}
+.wc{display:flex}
+.x,.m,.mx{width:38px;height:36px;border:0;background:none;font-size:16px;color:var(--dim);line-height:1}
+.x{font-size:20px}
+.m:hover,.mx:hover{background:var(--line);color:var(--white)}
+.x:hover{background:var(--roma);color:var(--white)}
+.wb{flex:1;min-height:0;overflow:auto;position:relative}
+.pad{padding:16px}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;gap:8px;height:calc(var(--bar) + env(safe-area-inset-bottom,0px));padding:0 max(12px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(12px,env(safe-area-inset-left,0px));background:rgba(11,14,17,.94);border-top:1px solid var(--line)}
+#tasks{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto}
+.tk{flex:none;height:32px;padding:0 12px;background:var(--panel);border:1px solid var(--line);border-radius:2px;font:500 12px var(--f-mono);color:var(--dim);white-space:nowrap;transition:color .2s,border-color .2s}
+.tk.on{color:var(--white);border-color:var(--acc)}
+.tk.mn{opacity:.55}
+#mem{flex:none;display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;background:none;border:1px solid var(--line);border-radius:2px;font:500 11px var(--f-mono);color:var(--dim)}
+#mem i{display:block;width:44px;height:5px;background:var(--bg);border:1px solid var(--line)}
+#mem i b{display:block;height:100%;width:100%;background:var(--ok);transition:width .8s,background .8s}
+#rain{flex:none;height:32px;padding:0 10px;background:none;border:1px solid var(--line);border-radius:2px;font:500 11px var(--f-mono);color:var(--dim)}#rain[aria-pressed="true"]{color:var(--white);border-color:var(--white)}
+#fog{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.5;background:repeating-linear-gradient(100deg,rgba(150,165,180,.05) 0 120px,transparent 120px 300px);background-size:600px 100%;animation:fogm 80s linear infinite}
+@keyframes fogm{to{background-position:600px 0}}
+#bolt{position:fixed;inset:0;pointer-events:none;z-index:4;background:#cfe0ff;opacity:0}
+#bolt.on{animation:bolt .5s ease-out}
+@keyframes bolt{0%{opacity:.16}12%{opacity:0}22%{opacity:.1}100%{opacity:0}}
+#noise{flex:none;height:32px;padding:0 10px;background:none;border:1px solid var(--line);border-radius:2px;font:500 11px var(--f-mono);color:var(--dim)}
+#noise[aria-pressed="true"]{color:var(--white);border-color:var(--white)}
+#clock{flex:none;font:500 13px var(--f-mono);color:var(--fg);min-width:44px;text-align:right}
+#whiteout{position:fixed;inset:0;z-index:100;background:#fff;opacity:0;pointer-events:none;transition:opacity 1.6s ease}
+#whiteout.on{opacity:1;pointer-events:auto}
+#boot{position:fixed;inset:0;z-index:200;background:#05070a;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:24px max(24px,env(safe-area-inset-left,0px));font:400 13px/1.7 var(--f-mono);color:var(--dim);transition:opacity .7s}
+#boot.off{opacity:0;pointer-events:none}
+#boot{overflow:hidden}#boot .in{position:relative;z-index:2;max-width:560px}
+#bcv{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+#boot::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 45%,transparent 35%,rgba(0,0,0,.85));animation:scn 7s linear infinite}
+@keyframes scn{to{background-position:0 90px,0 0}}
+.blogo{font:600 clamp(44px,12vw,84px)/.95 var(--f-display);letter-spacing:.22em;color:var(--white);animation:flick 7s steps(1) infinite}
+.bsub{font:500 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:6px 0 22px}
+#bl{min-height:150px}#bl div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted rgba(140,153,164,.2)}
+#bl .ok{color:var(--ok)}#bl .warn{color:var(--warn)}#bl .err{color:var(--roma)}
+.bbar{position:relative;height:3px;background:var(--line);margin:16px 0 6px}.bbar i{display:block;height:100%;width:0;background:var(--white);box-shadow:0 0 10px var(--white);transition:width .35s}
+.bbar span{position:absolute;right:0;top:8px;font:500 11px var(--f-mono);color:var(--dim)}
+.bhint{font:400 11px var(--f-mono);color:var(--dim);opacity:.7;animation:pu 2.4s infinite}
+#boot .lg{margin-top:18px;display:none;flex-direction:column;gap:10px;align-items:flex-start}
+#boot .lg.on{display:flex}
+#boot .who{display:flex;align-items:center;gap:12px}
+#boot .mono-av{width:48px;height:48px;font-size:28px}
+#toast{white-space:pre-line;position:fixed;left:50%;bottom:calc(var(--bar) + 14px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:90;max-width:min(420px,calc(100% - 32px));padding:10px 14px;background:var(--panel2);border:1px solid var(--dim);font:500 12px/1.4 var(--f-mono);color:var(--white);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+/* shared */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:30px;padding:0 12px;background:none;border:1px solid var(--line);border-radius:2px;font:500 12px var(--f-mono);color:var(--dim);transition:background .2s,color .2s}
+.chip:hover{color:var(--white);border-color:var(--dim)}
+.chip.on{background:var(--white);border-color:var(--white);color:#0b0e11}
+.btn{min-height:38px;padding:6px 14px;background:var(--panel2);border:1px solid var(--dim);border-radius:2px;font:500 13px var(--f-mono);color:var(--white);text-align:left;transition:background .2s,color .2s}
+.btn:hover{background:var(--white);color:#0b0e11}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn.sm{min-height:28px;padding:2px 10px;font-size:11px}
+.tag{display:inline-block;padding:1px 8px;border:1px solid var(--line);border-radius:2px;font:500 11px/1.6 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.warn{color:var(--warn);border-color:var(--warn)}.tag.unk{color:var(--unk);border-color:var(--unk)}
+h2,h3{font-family:var(--f-display);font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin:0;color:var(--white);text-wrap:balance}
+p{margin:0}
+.mono{font-family:var(--f-mono)}
+.dim{color:var(--dim)}
+.fade{animation:fd .35s ease both}
+@keyframes fd{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* dossier */
+.dos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+.card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;background:var(--bg2);border:1px solid var(--line);border-radius:2px;text-align:left;transition:border-color .2s,transform .2s}
+.card:hover{border-color:var(--c);transform:translateY(-2px)}
+.mono-av{width:56px;height:56px;display:grid;place-items:center;border:1px solid var(--c);color:var(--c);font:600 30px/1 var(--f-display)}
+.card b{font:500 18px var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:var(--white)}
+.card span{font-size:13px;color:var(--dim)}
+.dd{display:flex;flex-direction:column;gap:16px}
+.dd-head{display:flex;gap:14px;align-items:center}
+.dd-head .mono-av{width:72px;height:72px;font-size:42px;flex:none}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.facts div{background:var(--bg2);padding:8px 10px;min-width:0}
+.facts small{display:block;font:500 10px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.dd h3{font-size:13px;color:var(--dim);margin-bottom:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+details.fn{border:1px solid var(--line);background:var(--bg2)}
+details.fn summary{cursor:pointer;padding:10px 12px;font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+details.fn p{padding:0 12px 12px}
+/* messenger */
+.msn{display:grid;grid-template-columns:210px minmax(0,1fr);height:100%}
+.msn-list{border-right:1px solid var(--line);overflow:auto;display:flex;flex-direction:column}
+.contact{display:flex;gap:10px;align-items:center;padding:10px 12px;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;min-width:0}
+.contact:hover{background:var(--bg2)}
+.contact.on{background:var(--panel2)}
+.contact .mono-av{width:36px;height:36px;font-size:20px;flex:none}
+.contact div{min-width:0}.contact b{display:block;font-weight:500;color:var(--white)}
+.contact small{display:block;font:400 11px var(--f-mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact.lk{opacity:.45}
+.thread{display:flex;flex-direction:column;min-width:0;height:100%;min-height:0}.msn{overflow:hidden}.msn-list{min-height:0}
+.th-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:3;background:var(--panel2);flex:none}.th-head b{color:var(--c,var(--white));font-weight:500}.th-head .back{display:block!important}.th-msgs{min-height:0}
+.th-head .back{display:none;height:30px;padding:0 10px;background:none;border:1px solid var(--line);border-radius:2px;font:500 12px var(--f-mono)}
+.th-msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.bub{max-width:82%;padding:8px 12px;border-radius:2px;background:var(--panel2);border-left:2px solid var(--c,var(--other));overflow-wrap:anywhere;animation:fd .25s ease both}
+.bub.me{align-self:flex-end;background:#2a333b;border-left:0;border-right:2px solid var(--danya)}
+.bub.sys{align-self:center;max-width:100%;background:none;border:0;font:400 12px var(--f-mono);color:var(--dim);text-align:center}
+.bub.typ{width:54px;display:flex;gap:4px;justify-content:center}
+.bub.typ i{width:5px;height:5px;border-radius:50%;background:var(--dim);animation:ty 1s infinite}
+.bub.typ i:nth-child(2){animation-delay:.15s}.bub.typ i:nth-child(3){animation-delay:.3s}
+@keyframes ty{50%{transform:translateY(-4px);background:var(--white)}}
+.th-choices{display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-top:1px solid var(--line)}
+/* notes */
+.note{display:grid;grid-template-columns:78px minmax(0,1fr);gap:4px 10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.note time{font:500 11px var(--f-mono);color:var(--dim);padding-top:3px}
+.note .ev{grid-column:2;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.note .ev p{font:400 12px/1.5 var(--f-mono);color:var(--dim)}
+.note.re p.tx{color:var(--warn)}
+.gap{margin:10px 0;padding:14px;border:1px dashed var(--dim);background:repeating-linear-gradient(135deg,transparent 0 8px,rgba(255,255,255,.04) 8px 16px);text-align:center;font:500 12px var(--f-mono);color:var(--dim);width:100%}
+.gap.glitch{animation:gl .5s steps(2) 2}
+@keyframes gl{50%{transform:translateX(3px);color:var(--white)}}
+textarea,input[type=text]{width:100%;min-height:44px;padding:8px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:2px;font:14px/1.4 var(--f-mono)}
+textarea{min-height:68px;resize:vertical}
+/* calendar / story reader */
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin:12px 0}
+.day{height:42px;display:grid;place-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:2px;font:500 14px var(--f-mono);position:relative;transition:border-color .2s,background .2s}
+.day:hover{border-color:var(--dim)}
+.day.vis{color:var(--white)}
+.day.on{background:var(--white);color:#0b0e11;border-color:var(--white)}
+.day.lock{opacity:.3}
+.day.glit::after{content:"";position:absolute;right:4px;top:4px;width:5px;height:5px;background:var(--warn)}
+.day.pick{border-color:var(--c);color:var(--c)}
+.dayview{padding:14px;border:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;gap:10px}
+.dayview h2{font-size:26px}
+.ph-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.ph-txt{min-height:92px;font-size:15.5px;line-height:1.6}
+.nav2{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+/* phone */
+.ph{margin:0 auto;max-width:300px;min-height:100%;padding:18px 14px;display:flex;flex-direction:column;gap:12px}
+.ph-time{font:600 56px/1 var(--f-display);color:var(--white);text-align:center;letter-spacing:.04em}
+.ph-date{text-align:center;font:500 11px var(--f-mono);color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.miss{display:flex;gap:10px;align-items:center;padding:10px;background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--c)}
+.miss small{display:block;color:var(--dim);font:400 11px var(--f-mono)}
+.miss .n{margin-left:auto;font:500 13px var(--f-mono);color:var(--c)}
+.reply{padding:12px;border:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;gap:10px}
+/* flash drive */
+.fd-path{font:500 12px var(--f-mono);color:var(--dim);margin-bottom:10px}
+.fd-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px;border:1px solid var(--line);background:var(--bg2);margin-bottom:6px;font:400 13px var(--f-mono);align-items:center}
+.bar{height:6px;background:var(--bg);border:1px solid var(--line);margin:10px 0}
+.bar i{display:block;height:100%;width:0;background:var(--white)}
+.log{font:400 12px/1.6 var(--f-mono);color:var(--dim);min-height:90px}
+.fname{font:600 clamp(48px,14vw,96px)/1 var(--f-display);letter-spacing:.06em;color:var(--c,var(--white));text-align:center;padding:20px 0;animation:fd .8s ease both}
+.read{display:flex;flex-direction:column;gap:12px}
+.roof{position:relative;height:220px;border:1px solid var(--line);margin-bottom:12px}
+.roof canvas{position:absolute;inset:0;width:100%;height:100%}
+/* scene */
+.scene{position:relative;height:100%;min-height:300px;background:#0a0d11}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.rail{position:absolute;left:0;right:0;bottom:0;height:34px;border-top:3px solid #3a444d;background:repeating-linear-gradient(90deg,#1b2228 0 8px,#2a333b 8px 11px)}
+.hot{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border:1px solid var(--white);border-radius:50%;background:rgba(255,255,255,.06);animation:pu 2.4s ease-in-out infinite}
+.hot:hover,.hot.on{background:rgba(255,255,255,.28)}
+.hot.done{border-style:dashed;animation:none;opacity:.7}
+@keyframes pu{50%{box-shadow:0 0 0 9px rgba(255,255,255,.07)}}
+.cap{position:absolute;left:10px;right:10px;bottom:44px;padding:10px 12px;background:rgba(11,14,17,.92);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px;max-height:60%;overflow:auto}
+.scene .tl{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:2}
+.scene .cnt{position:absolute;top:8px;right:8px;z-index:2;padding:3px 8px;background:rgba(11,14,17,.8);border:1px solid var(--line);font:500 11px var(--f-mono);color:var(--dim)}
+/* rumor */
+.rum{display:flex;flex-direction:column;gap:10px}
+.hop{padding:12px;border:1px solid var(--line);border-left:3px solid var(--c);background:var(--bg2);animation:fd .3s ease both}
+.hop small{display:block;margin-bottom:4px;font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.hop em{display:block;margin-top:6px;font:400 12px var(--f-mono);color:var(--warn);font-style:normal}
+/* sorter */
+.sort-q{padding:16px;border:1px solid var(--line);background:var(--bg2);font-size:17px;line-height:1.45}
+.sort-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px}
+.fb{padding:12px;border-left:3px solid var(--c);background:var(--bg2);margin-top:12px}
+.prose{display:flex;flex-direction:column;gap:12px;max-width:62ch}
+.prose ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+/* relations */
+.rel{display:flex;flex-direction:column;height:100%}
+.rel svg{flex:1;min-height:200px;width:100%;display:block}
+.rel .ln{stroke:var(--line);stroke-width:1.5;transition:stroke .3s,stroke-width .3s}
+.rel .nd{cursor:grab;outline:none}.rel .nd:active{cursor:grabbing}.rel svg{touch-action:none;user-select:none;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.04),transparent 70%)}
+.rel .nd circle{fill:var(--bg2);stroke:var(--c);stroke-width:1.5;transition:fill .2s}
+.rel .nd:hover circle:not(.halo){fill:var(--panel2);stroke-width:3}
+.rel .nd text{fill:var(--white);font:500 13px var(--f-display);letter-spacing:.04em;text-anchor:middle;text-transform:uppercase;pointer-events:none}
+.rel .info{padding:12px 14px;border-top:1px solid var(--line);background:var(--bg2);min-height:92px}
+/* guitar */
+.gt{display:flex;flex-direction:column;gap:14px}
+.str{position:relative;height:38px;background:none;border:0;width:100%;text-align:left;padding:0}
+.str::before{content:"";position:absolute;left:34px;right:0;top:50%;height:calc(1px + var(--w,1)*1px);background:linear-gradient(90deg,#8c99a4,#d3d9de);transform-origin:50% 50%}
+.str span{position:absolute;left:0;top:50%;transform:translateY(-50%);width:28px;font:500 12px var(--f-mono);color:var(--dim)}
+.str.pl::before{animation:vib .9s ease-out}
+@keyframes vib{0%{transform:scaleY(6)}15%{transform:scaleY(-5)}30%{transform:scaleY(4)}45%{transform:scaleY(-3)}60%{transform:scaleY(2)}80%{transform:scaleY(-1)}100%{transform:none}}
+/* unknown */
+.unk-l{display:flex;flex-direction:column;gap:8px}
+.q{padding:12px;border:1px solid var(--line);background:var(--bg2);text-align:left;width:100%;transition:border-color .2s}
+.q:hover{border-color:var(--dim)}
+.q b{display:block;font-weight:500;color:var(--white)}
+.q p{margin-top:8px;color:var(--dim);font-size:13.5px}
+.q.k{border-left:3px solid var(--ok)}.q.u{border-left:3px solid var(--unk)}
+@media (min-width:721px){
+  #icons{grid-template-columns:repeat(2,minmax(0,1fr));max-width:216px;padding-bottom:8px}
+  #wins{left:236px}
+}
+@media (max-width:720px){
+  #desk{padding-top:14px;gap:12px}
+  .now{max-width:none;width:100%}
+  .win{left:0!important;top:0!important;width:100%!important;height:100%!important;resize:none;border-radius:0;min-width:0;transform-origin:50% 100%}
+  .tb{cursor:default}
+  .m,.mx{display:none}
+  .msn{grid-template-columns:minmax(0,1fr)}
+  .msn[data-v="list"] .thread,.msn[data-v="thread"] .msn-list{display:none}
+  .th-head .back{display:block}
+  #rain{font-size:0}#rain::before{content:"ДОЩ";font-size:11px}
+  #noise{font-size:0}#noise::before{content:"ШУМ";font-size:11px}
+  #mem span{display:none}
+}
+#desk::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 35%,transparent 35%,rgba(0,0,0,.6))}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#0b0e11;font-weight:600}
+.btn.pri:hover{filter:brightness(1.12);background:var(--acc)}
+.btn.pri[disabled]{opacity:.4}
+.chip:disabled{opacity:.3;pointer-events:none}
+.pg{height:3px;background:var(--line);margin:2px 0}.pg i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.day.done::before{content:"";position:absolute;left:10px;right:10px;bottom:5px;height:2px;background:var(--dim)}
+.day.lock{cursor:not-allowed}
+.dayview{padding:20px;gap:14px}
+.ph-txt{font:400 17px/1.75 Literata,Georgia,serif;max-width:62ch;min-height:160px;cursor:pointer;text-wrap:pretty}
+.nav2{position:sticky;bottom:0;padding:10px 0 0;background:var(--bg2);border-top:1px solid var(--line)}
+.nav2 .btn{min-height:42px}
+.bub.old{animation:none}
+@media (max-width:720px){.tb{height:46px}.x{width:52px;height:46px}.chip{height:38px}.btn,.btn.sm{min-height:44px}.ico{padding:14px 4px}.day{height:48px}.contact{padding:14px 12px}.ph-txt{font-size:18px}.hint{font-size:13px;max-width:none}}
+@media (prefers-reduced-motion:reduce){.hot,.gap.glitch,.top h1,.win,.win.out,.win.gl .wb,.bub,.fade,.str.pl::before{animation:none!important}#whiteout{transition:none}}
+
+.scene{display:flex;flex-direction:column}
+.sv{position:relative;flex:1;min-height:170px;overflow:hidden}
+.sv .rail{height:26px}
+.cap{position:static;flex:none;max-height:44%;border-width:1px 0 0;background:rgba(11,14,17,.97)}
+.atmo{margin:10px 0 0;font:italic 13px/1.5 var(--f-body);color:var(--dim);border-left:2px solid var(--line);padding-left:10px}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(0,0,0,.55));transition:background 1.6s}
+body[data-ph="3"]::after{background:radial-gradient(ellipse at 50% 40%,rgba(5,8,20,.18) 25%,rgba(0,0,0,.82))}
+body[data-ph="2"]::after{background:radial-gradient(ellipse at 50% 40%,rgba(90,40,10,.1) 30%,rgba(0,0,0,.6))}
+body[data-ph="1"]::after{background:radial-gradient(ellipse at 50% 40%,rgba(200,215,225,.05) 40%,rgba(0,0,0,.35))}
+#toast .q{display:block;margin-top:4px;color:var(--dim);font-size:11px}
+</style>
+
+<style id="fx">
+/* =====================================================================
+   FX LAYER: атмосфера, світло, текстури, кінематографічні переходи
+   ===================================================================== */
+/* текст не виділяється (крім полів вводу) */
+html,body{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+*{-webkit-user-select:none;user-select:none}
+textarea,input[type=text]{-webkit-user-select:text;user-select:text}
+button,.ico,.tk,.day{touch-action:manipulation}
+::selection{background:transparent}
+textarea::selection,input::selection{background:var(--acc);color:#0b0e11}
+*{scrollbar-width:thin;scrollbar-color:#35414b transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f3a44}
+::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+
+/* небо: легкий паралакс за курсором */
+#sky{transform:scale(1.05);transition:transform .9s cubic-bezier(.2,.7,.2,1);will-change:transform}
+
+/* плівкове зерно */
+#grain{position:fixed;left:-50%;top:-50%;width:200%;height:200%;z-index:60;pointer-events:none;opacity:.08;background-size:140px 140px;mix-blend-mode:overlay;animation:grain 1s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}17%{transform:translate(-5%,-8%)}33%{transform:translate(7%,3%)}50%{transform:translate(-3%,9%)}67%{transform:translate(8%,-6%)}83%{transform:translate(-9%,4%)}100%{transform:translate(0,0)}}
+
+/* CRT-сканлайни + смуга, що повільно пливе */
+#crt{position:fixed;inset:0;z-index:59;pointer-events:none;overflow:hidden;opacity:.32;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+#crt::after{content:"";position:absolute;left:0;right:0;top:0;height:18vh;background:linear-gradient(180deg,transparent,rgba(255,255,255,.035),transparent);transform:translateY(-20vh);animation:roll 11s linear infinite}
+@keyframes roll{to{transform:translateY(105vh)}}
+
+/* світло від курсора, колір залежить від обраної опори */
+#glow{position:fixed;inset:0;z-index:3;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(460px circle at var(--mx,72%) var(--my,28%),color-mix(in srgb,var(--acc) 13%,transparent),transparent 65%)}
+@media (hover:none){#glow{display:none}}
+
+/* туман: шар низових хмар */
+#fog{opacity:.7}
+#fog::after{content:"";position:absolute;left:-20%;right:-20%;bottom:0;height:46%;background:radial-gradient(ellipse at 28% 100%,rgba(140,160,180,.13),transparent 60%),radial-gradient(ellipse at 76% 100%,rgba(140,160,180,.1),transparent 55%);animation:mist 46s ease-in-out infinite alternate}
+@keyframes mist{from{transform:translateX(-7%)}to{transform:translateX(7%)}}
+
+/* ---------- заголовок ---------- */
+.top h1{animation:none!important;text-shadow:0 0 44px color-mix(in srgb,var(--acc) 30%,transparent)}
+.sub::before{content:"";display:inline-block;width:30px;height:1px;margin-right:12px;vertical-align:middle;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+
+/* ---------- картка «зараз» ---------- */
+.now{position:relative;background:linear-gradient(135deg,rgba(17,22,27,.9),rgba(8,10,13,.82));box-shadow:0 14px 44px rgba(0,0,0,.5)}
+.now::before,.now::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none;transition:border-color .6s}
+.now::before{top:-1px;right:-1px;border-top:2px solid var(--acc);border-right:2px solid var(--acc)}
+.now::after{bottom:-1px;left:-1px;border-bottom:2px solid var(--acc);border-left:2px solid var(--acc)}
+.pg{height:7px;margin:4px 0;background:#26313a;-webkit-mask:repeating-linear-gradient(90deg,#000 0 calc(100%/80 - 1px),transparent calc(100%/80 - 1px) calc(100%/80));mask:repeating-linear-gradient(90deg,#000 0 calc(100%/80 - 1px),transparent calc(100%/80 - 1px) calc(100%/80))}
+.pg i{box-shadow:0 0 10px var(--acc)}
+
+/* ---------- іконки робочого столу ---------- */
+.ico{overflow:hidden;border-radius:3px;border:1px solid rgba(44,55,65,.55);background:linear-gradient(180deg,rgba(23,29,35,.72),rgba(11,14,17,.55));animation:icoIn .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*50ms)}
+@keyframes icoIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.ico svg{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--c,#fff) 45%,transparent))}
+.ico:hover{box-shadow:inset 0 1px 0 var(--c),0 10px 26px rgba(0,0,0,.45);border-color:color-mix(in srgb,var(--c) 40%,var(--line))}
+.ico.nw::before{box-shadow:0 0 10px var(--warn)}
+
+/* ---------- вікна ---------- */
+.win{background:linear-gradient(180deg,rgba(28,35,42,.97),rgba(16,21,26,.98));border-radius:3px;box-shadow:0 28px 74px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.05);animation:wIn2 .46s cubic-bezier(.2,.85,.2,1) both}
+@keyframes wIn2{0%{opacity:0;transform:translateY(18px) scaleY(.9);filter:brightness(2.4) blur(3px)}55%{opacity:1;filter:brightness(1.35) blur(0)}100%{opacity:1;transform:none;filter:none}}
+.win::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;z-index:6;pointer-events:none;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:0;transition:opacity .4s}
+.win[data-on="1"]::before{opacity:1}
+.win::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.045) 0,transparent 32%),radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--acc) 7%,transparent),transparent 55%)}
+.tb{background:linear-gradient(180deg,#27313b,#1b232a);border-bottom-color:#33404b}
+.tt::before{content:"";display:inline-block;width:6px;height:6px;margin-right:9px;vertical-align:1px;background:var(--line);transition:background .3s,box-shadow .3s}
+.win[data-on="1"] .tt::before{background:var(--acc);box-shadow:0 0 9px var(--acc)}
+
+/* ---------- кнопки і чипи ---------- */
+.btn{position:relative;overflow:hidden;background:linear-gradient(180deg,#242e37,#1b232a);transition:background .2s,color .2s,transform .15s,box-shadow .2s}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn.pri{background:var(--acc);box-shadow:0 0 22px color-mix(in srgb,var(--acc) 38%,transparent)}
+.btn.pri::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);animation:shine 4.6s ease-in-out infinite}
+@keyframes shine{0%,62%{left:-60%}100%{left:130%}}
+.chip.on{background:var(--acc);border-color:var(--acc);box-shadow:0 0 14px color-mix(in srgb,var(--acc) 35%,transparent)}
+.tag{background:rgba(255,255,255,.02)}
+.tag.ok{box-shadow:inset 0 0 10px rgba(134,181,146,.1)}.tag.warn{box-shadow:inset 0 0 10px rgba(216,180,92,.1)}.tag.unk{box-shadow:inset 0 0 10px rgba(141,164,207,.1)}
+
+/* ---------- досьє ---------- */
+.card{position:relative;overflow:hidden;background:linear-gradient(180deg,#151b21,#10151a)}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--c);opacity:.55}
+.card::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;pointer-events:none;opacity:0;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--c) 16%,transparent),transparent)}
+.card:hover{box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 1px color-mix(in srgb,var(--c) 32%,transparent)}
+.card:hover::after{opacity:1;animation:scanc 1.2s linear infinite}
+@keyframes scanc{to{transform:translateY(360%)}}
+.facts div{background:linear-gradient(180deg,#141a20,#10151a)}
+details.fn[open] summary{color:var(--white);border-bottom:1px solid var(--line)}
+
+/* ---------- месенджер ---------- */
+.contact{position:relative;transition:background .2s}
+.contact.on{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 14%,transparent),transparent);box-shadow:inset 2px 0 0 var(--c)}
+.th-head{background:linear-gradient(180deg,#232c35,#1d252c)}
+.bub{border-radius:2px 11px 11px 11px;background:linear-gradient(180deg,#252f38,#1e262d);box-shadow:0 1px 0 rgba(0,0,0,.45)}
+.bub.me{border-radius:11px 2px 11px 11px;background:linear-gradient(180deg,#2e3943,#27313a)}
+.bub.sys{display:flex;align-items:center;gap:12px;background:none;box-shadow:none;border-radius:0}
+.bub.sys::before,.bub.sys::after{content:"";flex:1;min-width:10px;height:1px;background:linear-gradient(90deg,transparent,var(--line))}
+.bub.sys::after{background:linear-gradient(270deg,transparent,var(--line))}
+.th-choices .btn{border-left:3px solid var(--c,var(--dim))}
+
+/* ---------- читач історії ---------- */
+.dayview{position:relative;background:linear-gradient(180deg,var(--bg2),#0e1317)}
+.dayview::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;z-index:3;background:linear-gradient(180deg,var(--ph,var(--acc)),transparent)}
+.dayview[data-ph="0"]{--ph:#8d9ba6}.dayview[data-ph="1"]{--ph:#d3dde4}.dayview[data-ph="2"]{--ph:#e38a2e}.dayview[data-ph="3"]{--ph:#6b86d6}
+.banner{position:relative;height:124px;margin:-20px -20px 0;overflow:hidden;border-bottom:1px solid var(--line)}
+.banner canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.banner::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 38%,#11161b),linear-gradient(90deg,rgba(0,0,0,.4),transparent 45%)}
+.bn-t{position:absolute;left:18px;bottom:10px;z-index:2;font:500 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--white);text-shadow:0 1px 8px #000}
+.ph-txt::first-letter{font:600 3em/.82 var(--f-display);float:left;padding:6px 10px 0 0;color:var(--acc);text-shadow:0 0 18px color-mix(in srgb,var(--acc) 45%,transparent)}
+.ph-txt.typing::after{content:"▍";margin-left:2px;color:var(--acc);animation:caret .8s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.atmo::before{content:"⌁ ";color:var(--acc)}
+.nav2{background:linear-gradient(180deg,transparent,#0e1317 38%)}
+.day{background:linear-gradient(180deg,#151b21,#10151a);transition:border-color .2s,background .2s,box-shadow .2s,transform .15s}
+.day.vis:hover{transform:translateY(-2px);border-color:var(--acc)}
+.day.on{background:var(--acc);border-color:var(--acc);box-shadow:0 0 20px color-mix(in srgb,var(--acc) 50%,transparent)}
+
+/* ---------- нотатки / флешка ---------- */
+.note{transition:background .2s}.note:hover{background:rgba(255,255,255,.015)}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 18px color-mix(in srgb,var(--acc) 22%,transparent)}
+.fname{text-shadow:0 0 40px color-mix(in srgb,var(--c,#fff) 55%,transparent)}
+.fd-row{background:linear-gradient(180deg,#151b21,#10151a)}
+
+/* ---------- панель завдань ---------- */
+#bar{background:linear-gradient(180deg,rgba(18,23,29,.96),rgba(8,10,13,.98));box-shadow:0 -1px 0 color-mix(in srgb,var(--acc) 40%,transparent),0 -14px 40px rgba(0,0,0,.4)}
+.tk.on{box-shadow:inset 0 -2px 0 var(--acc)}
+#mem i b{box-shadow:0 0 8px currentColor}
+#sfx{flex:none;height:32px;padding:0 10px;background:none;border:1px solid var(--line);border-radius:2px;font:500 11px var(--f-mono);color:var(--dim)}
+#sfx[aria-pressed="true"]{color:var(--white);border-color:var(--white)}
+#toast{border-left:3px solid var(--acc);background:linear-gradient(90deg,rgba(33,41,49,.98),rgba(22,28,34,.98));box-shadow:0 12px 44px rgba(0,0,0,.65)}
+
+/* ---------- екран завантаження ---------- */
+.blogo{text-shadow:0 0 34px rgba(255,255,255,.28)}
+#enter{padding:10px 28px;font-size:14px;letter-spacing:.22em;text-transform:uppercase;border-color:var(--white);animation:entp 2.4s ease-in-out infinite}
+@keyframes entp{50%{box-shadow:0 0 22px rgba(255,255,255,.28)}}
+
+/* ---------- HUD системника та записка від мами ---------- */
+#hud{position:absolute;right:6px;bottom:calc(var(--bar) + 8px);z-index:0;width:172px;padding:10px 12px;pointer-events:none;font:500 11px/1.9 var(--f-mono);letter-spacing:.04em;color:var(--dim);background:rgba(11,14,17,.55);border:1px solid rgba(44,55,65,.7);border-left:2px solid var(--acc)}
+#hud div{display:flex;justify-content:space-between;gap:10px}
+#hud span{opacity:.7}#hud b{font-weight:500;color:var(--white)}
+#hud .hb{display:block;height:3px;margin-top:5px;background:#1d252c}
+#hud .hb i{display:block;height:100%;background:var(--acc);box-shadow:0 0 8px var(--acc);transition:width 1.2s}
+#postit{position:absolute;right:18px;bottom:calc(var(--bar) + 176px);z-index:0;width:172px;padding:18px 14px 12px;pointer-events:none;transform:rotate(2.5deg);font:600 20px/1.12 Caveat,cursive;white-space:pre-line;color:#2a2416;background:linear-gradient(160deg,#c9bb83,#b3a470);filter:saturate(.8);opacity:.9;box-shadow:0 12px 28px rgba(0,0,0,.55)}
+#postit::before{content:"";position:absolute;left:50%;top:-9px;width:54px;height:17px;margin-left:-27px;transform:rotate(-3deg);background:rgba(220,225,230,.28)}
+@media (max-width:1000px),(max-height:640px){#hud,#postit{display:none}}
+
+/* ---------- кінематографічні переходи ---------- */
+#tcard{position:fixed;inset:0;z-index:80;display:grid;place-items:center;opacity:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(5,7,10,.82),rgba(3,4,6,.97))}
+#tcard.on{pointer-events:auto;cursor:pointer;animation:tcard 2.7s ease both}
+@keyframes tcard{0%{opacity:0}14%{opacity:1}80%{opacity:1}100%{opacity:0}}
+#tcard .bar{position:absolute;left:0;right:0;height:0;background:#000}
+#tcard .bar.t{top:0}#tcard .bar.b{bottom:0}
+#tcard.on .bar{animation:tbar 2.7s cubic-bezier(.3,.8,.2,1) both}
+@keyframes tbar{0%{height:0}18%{height:12vh}80%{height:12vh}100%{height:0}}
+.tc-in{display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 24px;text-align:center}
+.tc-in small{font:500 12px var(--f-mono);letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.tc-n{font:600 clamp(64px,17vw,176px)/.9 var(--f-display);letter-spacing:.08em;color:var(--white);text-shadow:0 0 56px color-mix(in srgb,var(--acc) 55%,transparent)}
+.tc-t{font:italic 400 clamp(18px,3vw,28px)/1.3 Literata,Georgia,serif;color:var(--fg)}
+.tc-in em{font:500 11px var(--f-mono);letter-spacing:.22em;text-transform:uppercase;font-style:normal;color:var(--warn);border:1px solid var(--warn);padding:2px 12px}
+#tcard.on .tc-in>*{animation:tcin .9s cubic-bezier(.2,.8,.2,1) both}
+#tcard.on .tc-in>*:nth-child(2){animation-delay:.1s}
+#tcard.on .tc-in>*:nth-child(3){animation-delay:.28s}
+#tcard.on .tc-in>*:nth-child(4){animation-delay:.5s}
+@keyframes tcin{from{opacity:0;transform:translateY(16px);letter-spacing:.3em}to{opacity:1;transform:none}}
+#lt{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(var(--bar) + 18px);z-index:58;pointer-events:none;opacity:0;display:flex;align-items:baseline;gap:12px;padding:8px 22px 8px 14px;border-left:3px solid var(--acc);background:linear-gradient(90deg,rgba(5,7,10,.88),transparent)}
+#lt.on{animation:ltk 2.8s ease both}
+@keyframes ltk{0%{opacity:0;transform:translateX(-16px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#lt b{font:500 30px/1 var(--f-display);letter-spacing:.08em;color:var(--white)}
+#lt span{font:500 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#cut{position:fixed;inset:0;z-index:57;pointer-events:none;opacity:0;background:#05070a}
+#cut.on{animation:cutk .65s ease}
+@keyframes cutk{0%{opacity:0}28%{opacity:.6}100%{opacity:0}}
+
+/* ---------- нестабільність залежить від довіри до пам'яті ---------- */
+body[data-tr="mid"]::before,body[data-tr="lo"]::before{content:"";position:fixed;inset:0;z-index:3;pointer-events:none;}
+body[data-tr="mid"]::before{box-shadow:inset 0 0 150px rgba(140,90,20,.2)}
+body[data-tr="lo"]::before{box-shadow:inset 0 0 170px rgba(130,22,22,.38)}
+
+/* ---------- мобільні ---------- */
+@media (max-width:720px){
+  #grain{mix-blend-mode:normal;opacity:.05}
+  #crt{opacity:.2}
+  .banner{height:92px}
+  .ph-txt::first-letter{font-size:2.6em}
+  #sfx{font-size:0}#sfx::before{content:"UI";font-size:11px}
+  .tc-n{letter-spacing:.04em}
+}
+@media (prefers-reduced-motion:reduce){
+  #grain,#crt::after,.banner canvas,.top h1::before,.top h1::after,.ico,#hud,.btn.pri::after,.card::after,.dd-head .mono-av,#lt.on,#fog::after,.ph-txt.typing::after,#enter,body::before,#mem{animation:none!important}
+  #tcard .bar{display:none}
+  #tcard.on{animation:tcardrm 1.6s ease both}
+  @keyframes tcardrm{0%,100%{opacity:0}15%,80%{opacity:1}}
+  #tcard.on .tc-in>*,#tcard.g .tc-n{animation:none!important}
+}
+
+/* =====================================================================
+   v2: без глітчу, ергономіка, мобільна розкладка
+   ===================================================================== */
+.blogo,.gap.glitch,.win.gl .wb{animation:none!important}
+#toast{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto;transform:translate(-50%,-16px)}
+#toast.on{transform:translate(-50%,0)}
+#lt{flex-direction:column;align-items:flex-start;gap:4px}
+#more,#moremenu{display:none}
+@supports (height:100dvh){html,body{height:100dvh}}
+
+@media (max-width:720px){
+  /* шапка: компактніше, без довгого підпису */
+  #desk{gap:10px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+  .top{gap:10px}
+  .top h1{font-size:clamp(40px,13vw,56px)}
+  .sub{margin-top:6px;font-size:11px}
+  .hint{display:none}
+  .now{min-width:0;padding:10px 12px}
+  /* іконки: щільна сітка з великими зонами дотику */
+  #icons{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-width:none;padding-bottom:8px}
+  .ico{padding:12px 2px;font-size:11px;min-height:64px;justify-content:center}
+  .ico svg{width:26px;height:26px}
+  /* вікна на весь екран, без бокових відступів */
+  #wins{left:calc(-1*(max(16px,env(safe-area-inset-left,0px)) - env(safe-area-inset-left,0px)));right:calc(-1*(max(16px,env(safe-area-inset-right,0px)) - env(safe-area-inset-right,0px)))}
+  .win{border:0;box-shadow:none}
+  .win[data-on="1"]{box-shadow:none}
+  .pad{padding:14px}
+  /* панель: завдання + пам'ять + ще */
+  #bar{gap:6px}
+  #clock{display:none}
+  #mem{padding:0 8px;gap:6px}
+  #mem i{width:30px}
+  #more{display:block;flex:none;width:44px;height:36px;background:none;border:1px solid var(--line);border-radius:2px;font:600 18px/1 var(--f-mono);color:var(--white)}
+  #more[aria-expanded="true"]{background:var(--white);color:#0b0e11}
+  #moremenu{position:fixed;z-index:70;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--bar) + 10px + env(safe-area-inset-bottom,0px));flex-direction:column;gap:6px;padding:8px;background:rgba(14,18,22,.98);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+  #moremenu.on{display:flex}
+  #moremenu button{height:44px;min-width:140px;text-align:left;padding:0 14px;font-size:12px!important}
+  #moremenu #rain::before,#moremenu #noise::before,#moremenu #sfx::before{content:none}
+  #moremenu #sfx::after{content:" · звуки інтерфейсу"}
+  .tk{height:36px}
+  /* читач */
+  .dayview{padding:14px;gap:12px}
+  .banner{height:84px;margin:-14px -14px 0}
+  .dayview h2{font-size:23px}
+  .ph-txt{font-size:17px;line-height:1.7;min-height:120px}
+  .days{display:flex;overflow-x:auto;gap:6px;margin:8px 0;padding-bottom:4px;scroll-snap-type:x proximity}
+  .day{flex:none;width:46px;height:46px;scroll-snap-align:center}
+  .nav2{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:10px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+  .nav2 .btn{min-height:48px;justify-content:center}
+  .nav2 .nxt{text-align:center;line-height:1.25}
+  .ph-tabs .chip{flex:1;min-width:0;padding:0 6px}
+  /* чати */
+  .bub{max-width:90%}
+  .th-choices{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px))}
+  .th-head{padding:8px 12px}
+  .contact{min-height:60px}
+  /* досьє */
+  .dos-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* повідомлення й титри не перекривають кнопки */
+  #lt{display:none}
+  #toast{max-width:calc(100% - 24px)}
+  #tcard .bar{max-height:9vh}
+  @keyframes tbar{0%{height:0}18%{height:9vh}80%{height:9vh}100%{height:0}}
+  /* Балкон: підписи не накладаються на сцену */
+  .cap{max-height:48%}
+}
+
+</style>
+<style id="v3">
+/* v3: без глітчу й лагів */
+#grain{left:0;top:0;width:100%;height:100%;opacity:.045;mix-blend-mode:normal;animation:none}
+#crt{opacity:.14}#crt::after{display:none}
+#glow{mix-blend-mode:normal;inset:auto;left:0;top:0;width:900px;height:900px;will-change:transform;background:radial-gradient(circle,color-mix(in srgb,var(--acc) 11%,transparent),transparent 62%)}
+#fog{animation:none}
+.now{backdrop-filter:none}
+.win{animation:wIn3 .2s ease-out backwards;box-shadow:0 12px 32px rgba(0,0,0,.5);contain:layout style}
+@keyframes wIn3{from{opacity:0;transform:translateY(8px)}}
+.win::after{display:none}
+.win[data-on="1"]{box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.win.out{animation:wOut .14s ease-in forwards}
+.wb{contain:layout paint;overscroll-behavior:contain}
+.btn.pri::after{display:none}
+.card:hover::after{animation:none;opacity:0}
+#cut.on{animation:cutk3 .5s ease}
+@keyframes cutk3{0%{opacity:0}30%{opacity:.25}100%{opacity:0}}
+@media (max-width:720px){#grain,#crt{display:none}}
+/* месенджер */
+.msn{grid-template-columns:272px minmax(0,1fr);background:#0e1317}
+.msn-list{background:linear-gradient(180deg,#131a20,#0e1317);border-right:1px solid #232d36}
+.ml-h{display:flex;justify-content:space-between;align-items:baseline;padding:14px 16px 10px;position:sticky;top:0;z-index:2;background:#131a20;border-bottom:1px solid #232d36}
+.ml-h b{font:500 15px var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--white)}
+.ml-h span{font:500 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.ml-h span.nw{color:var(--warn)}
+.ml-b{display:flex;flex-direction:column;padding:6px}
+.contact{width:100%;gap:12px;padding:10px;border:0;border-radius:6px;margin-bottom:2px;transition:background .15s}
+.contact:hover{background:rgba(255,255,255,.04)}
+.contact.on{background:color-mix(in srgb,var(--c) 13%,#151c22);box-shadow:inset 2px 0 0 var(--c)}
+.av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:600 19px/1 var(--f-display);font-style:normal;color:var(--c);background:color-mix(in srgb,var(--c) 11%,#10151a);border:1px solid color-mix(in srgb,var(--c) 55%,transparent)}
+.ct{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.r1,.r2{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.contact b{font:500 14.5px var(--f-body);color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.contact time{flex:none;font:400 10px var(--f-mono);color:var(--dim)}
+.contact small{flex:1;min-width:0;font:400 12.5px var(--f-body);color:var(--dim)}
+.contact.nw small{color:var(--fg)}
+.contact u{flex:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#0b0e11;font:600 11px/18px var(--f-mono);text-align:center;text-decoration:none}
+.contact u:empty{display:none}
+.th-head{gap:12px;padding:10px 16px;background:#131a20;border-bottom:1px solid #232d36}
+.th-head .av{width:34px;height:34px;font-size:17px}
+.th-head .nm{display:flex;flex-direction:column;min-width:0}
+.th-head .nm b{font:500 15px/1.2 var(--f-body);color:var(--white)}
+.th-head .nm small{height:14px;font:400 11px var(--f-mono);color:var(--dim)}
+.th-head.ty .nm small{color:var(--c)}
+.th-head .back{display:none!important}
+.th-msgs{gap:0;padding:16px 18px;overscroll-behavior:contain}
+.bub{margin-top:8px;max-width:78%;padding:9px 13px;border:0;border-radius:4px 14px 14px 14px;background:#1d252c;box-shadow:inset 2px 0 0 color-mix(in srgb,var(--c,var(--other)) 60%,transparent);line-height:1.45;animation:fd .18s ease both}
+.bub.gp{margin-top:2px}
+.bub.me{background:#2b3640;border-radius:14px 4px 14px 14px;box-shadow:inset -2px 0 0 rgba(233,236,238,.45)}
+.bub.old{animation:none}
+.bub.sys{margin:14px 0 6px;max-width:100%;box-shadow:none;background:none}
+.bub.typ{width:58px;padding:13px 0;margin-top:8px}
+.bub.typ i{opacity:.35}
+@keyframes ty{0%,100%{opacity:.35}50%{opacity:1}}
+.th-choices{gap:8px;padding:12px 16px;background:#10161b;border-top:1px solid #232d36}
+.th-choices:empty{display:none}
+.th-choices .btn{border:1px solid #2c3741;border-left:3px solid var(--c,var(--dim));border-radius:8px;background:#161d23;font:500 14px/1.35 var(--f-body);padding:10px 14px;animation:fd .18s ease both}
+.th-choices .btn::before{content:"›";margin-right:8px;color:var(--c)}
+.th-choices .btn:hover{background:color-mix(in srgb,var(--c) 14%,#161d23);color:var(--white)}
+@media (max-width:720px){
+  .msn{grid-template-columns:minmax(0,1fr)}
+  .th-head .back{display:block!important;height:34px;border-radius:6px}
+  .contact{min-height:66px}.bub{max-width:88%}.th-msgs{padding:14px}
+}
+.win{transition:border-color .25s,box-shadow .25s}
+.win.fr{animation:wFr .24s ease-out}
+@keyframes wFr{from{opacity:.82;transform:translateY(5px) scale(.992)}}
+.win.max{transition:none}
+.tk{transition:color .25s,border-color .25s,box-shadow .25s,opacity .25s}
+@media (max-width:720px){.msn[data-v="thread"] .thread,.msn[data-v="list"] .msn-list{animation:fd .22s ease both}}
+.win{will-change:transform,opacity;transition:border-color .25s}
+@keyframes wFr{from{opacity:.9}}
+.th-head .nm{flex:1}
+.th-head .nm small{height:auto;min-height:14px;font-size:10.5px;line-height:1.35;white-space:normal;overflow-wrap:anywhere}
+@media (max-width:720px){
+  .win{will-change:auto;contain:none;transition:none;animation:wInM .16s linear backwards}
+  .win.fr{animation:none}
+  .win.out{animation:wOutM .12s linear forwards}
+  .wb{contain:none}
+  .win::before{transition:none}
+}
+@keyframes wInM{from{opacity:0}}
+@keyframes wOutM{to{opacity:0}}
+.win,.win.fr{animation:none!important}
+.win.in{animation:wIn3 .2s ease-out!important}
+.win.out{animation:wOut .14s ease-in forwards!important}
+@media (max-width:720px){.win.in{animation:wInM .16s linear!important}.win.out{animation:wOutM .12s linear forwards!important}}
+.fade,.hop,.fname,.th-choices .btn,.dos-grid .card,.note{animation:none!important}
+.pad,.dd,.dayview,.read,.rum,.prose{animation:none!important}
+@media (max-width:720px){
+  .win,.win.in,.win.out,.win.fr,.win.min{animation:none!important;transition:none!important;will-change:auto!important}
+  .win.out{visibility:hidden}
+  .wb,.wb *{will-change:auto}
+}
+.brsw{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--acc);background:var(--bg2)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dos" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-msn" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-ph" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-usb" viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12"/><path d="M9 9V3h6v6M11 5v1M13 5v1"/></symbol>
+  <symbol id="i-win" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18"/><path d="M12 3v18M4 12h16"/></symbol>
+  <symbol id="i-rum" viewBox="0 0 24 24"><circle cx="5" cy="14" r="2.5"/><circle cx="12" cy="6" r="2.5"/><circle cx="19" cy="14" r="2.5"/><path d="M6.8 12.2l3.4-4M13.8 7.8l3.4 4M7.5 14h9"/></symbol>
+  <symbol id="i-chk" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M7 12l3.5 3.5L17 8"/></symbol>
+  <symbol id="i-txt" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-rel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="5" r="1.8"/><circle cx="20" cy="6" r="1.8"/><circle cx="19" cy="19" r="1.8"/><circle cx="5" cy="19" r="1.8"/><path d="M10 10L5.3 6.2M14 10.5l4.6-3.5M14 14l4 4M10 14l-4 4"/></symbol>
+  <symbol id="i-gtr" viewBox="0 0 24 24"><path d="M14 10l7-7M18 3l3 3"/><path d="M13 9c-3-1-6 1-6 4-3 0-4 2-4 4 0 2 2 4 4 4 3 0 4-1 4-4 3 0 5-3 4-6z"/><circle cx="8.5" cy="16.5" r="1"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M9.5 9.5a2.5 2.5 0 115 0c0 1.8-2.5 2-2.5 4M12 17v.5"/></symbol>
+</svg>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="desk">
+  <header class="top">
+    <div>
+      <h1>SideOnk</h1>
+      <p class="sub" id="sub"></p>
+      <p class="hint">Історія відкривається по черзі: дні, повідомлення й програми з’являються, коли сюжет доходить до них. Почніть з «20 днів». Усе тут показано очима Дані, тому не все варто приймати на віру.</p>
+    </div>
+    <aside class="now" id="now" aria-live="polite"></aside>
+  </header>
+  <nav id="icons" aria-label="Програми"></nav>
+  <div id="wins"></div>
+</div>
+<footer id="bar">
+  <div id="tasks"></div>
+  <button id="mem" type="button" title="Довіра Дані до власної пам’яті. Падає з кожним днем збою." aria-label="Довіра до пам’яті"><span>ПАМ’ЯТЬ</span><i><b></b></i><em style="font-style:normal">100%</em></button>
+  <button id="rain" type="button" aria-pressed="false">Дощ</button>
+  <button id="noise" type="button" aria-pressed="false">Шум системника</button>
+  <span id="clock"></span>
+</footer>
+<div id="fog" aria-hidden="true"></div><div id="bolt" aria-hidden="true"></div>
+<div id="toast" role="status"></div>
+<div id="whiteout" aria-hidden="true"></div>
+<div id="boot">
+  <canvas id="bcv" aria-hidden="true"></canvas>
+  <div class="in">
+    <div class="blogo" id="blogo">SIDEONK</div>
+    <div class="bsub">психологічна візуальна новела · Заставинськ</div>
+    <div id="bl"></div>
+    <div class="bbar" id="bbar"><i></i><span id="bpct">0%</span></div>
+    <div class="lg" id="lg"><div class="who"><div><b style="color:var(--white);font-weight:500">Даня Німеров</b><br><span id="bwho">Заставинськ · пароль збережено</span></div></div><button class="btn" id="enter" type="button">Увійти</button><span class="bhint">Enter · торкніться, щоб пропустити</span></div>
+  </div>
+</div>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BNAME={anya:"Аня",olya:"Оля",alone:"Самотність"};
+const BCOL={anya:"var(--anya)",olya:"var(--olya)",alone:"var(--danya)"};
+const BHEX={anya:"#eba7c6",olya:"#e38a2e",alone:"#e9ecee"};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- state ---------- */
+let branch=store.get("sk-branch",null);
+let visited=new Set(store.get("sk-visited",[1]));
+let P=store.get("sk-p",null)||{day:Math.max(...visited),ph:0};
+if(!branch&&P.day>11){P.day=11;P.ph=0}
+visited=new Set([...visited].filter(d=>d<=P.day));visited.add(1);
+let cur=store.get("sk-cur",null)||{day:P.day,ph:P.ph};
+const reach=(d,ph)=>d<P.day||(d===P.day&&ph<=P.ph);
+const doneDay=d=>d<P.day||(d===P.day&&P.ph>=3);
+let seenT=store.get("sk-seen",{});
+if(!reach(cur.day,cur.ph))cur={day:P.day,ph:P.ph};
+function advance(d,ph){if((d>19||(d===19&&ph>3))&&!store.get("sk-dec",false))return;if(d>P.day||(d===P.day&&ph>P.ph)){P.day=d;P.ph=ph}visited.add(d)}
+const hooks=new Set();
+function emit(){hooks.forEach(f=>{try{f()}catch(e){}})}
+function save(){store.set("sk-branch",branch);store.set("sk-visited",[...visited]);store.set("sk-p",P);store.set("sk-cur",cur)}
+function setBranch(b){
+  const pr=getPR();
+  if(b&&!branch&&pr.s[b]){switchBranch(b,true);return}
+  if(b&&!branch){save();pr.s.trunk=snap();pr.cur=b;store.set("sk-prof",pr)}
+  if(!b&&branch){delete pr.s[branch];pr.cur=null;store.set("sk-prof",pr)}
+  branch=b;
+  if(b){advance(11,Math.max(P.ph,2));cur={day:11,ph:Math.max(cur.ph,2)}}
+  else{[...visited].forEach(d=>{if(d>11)visited.delete(d)});cur={day:11,ph:Math.min(Math.max(cur.ph,1),3)}}
+  save();applyAccent();sky&&sky.rebuild();emit();
+  if(b)toast("Опора обрана: "+BNAME[b]+". Далі вечір дня 11.");
+}
+function applyAccent(){document.documentElement.style.setProperty("--acc",branch?BHEX[branch]:"#e9ecee")}
+const TQ=[];let tbusy=false;
+function toast(t){if(tbusy){TQ.length=0}TQ.push(t);if(!tbusy)tnext()}
+function tnext(){const e=$("#toast");if(!TQ.length){tbusy=false;e.classList.remove("on");return}
+  tbusy=true;const m=TQ.shift();e.textContent=m;
+  e.classList.add("on");setTimeout(()=>{e.classList.remove("on");setTimeout(tnext,350)},1700+m.split("\n").length*450)}
+function trust(){let g=0;visited.forEach(d=>{if(isGlitch(d))g++});return Math.max(8,100-g*9)}
+function drawMem(){
+  const t=trust(),b=$("#mem b");
+  b.style.width=t+"%";b.style.background=t>70?"var(--ok)":t>45?"var(--warn)":"var(--roma)";
+  $("#mem em").textContent=t+"%";
+}
+hooks.add(drawMem);
+$("#mem").onclick=()=>toast("Довіра Дані до власної пам’яті. Падає з кожним днем збою сприйняття.");
+
+/* ---------- window manager ---------- */
+const APPS={},open={};
+let zi=10,spawn=0;
+const wins=$("#wins"),tasks=$("#tasks");
+function openApp(id,opts){
+  if(open[id]){
+    const r=open[id];
+    if(r.w.classList.contains("min"))restore(id);
+    front(id);if(r.api&&opts)r.api(opts);return;
+  }
+  const a=APPS[id];
+  const w=el("section","win in");w.addEventListener("animationend",e=>{if(e.target===w)w.classList.remove("in")});
+  w.setAttribute("role","dialog");w.setAttribute("aria-label",a.title);
+  w.innerHTML='<div class="tb"><span class="tt"></span><div class="wc"><button class="m" type="button" aria-label="Згорнути">–</button><button class="mx" type="button" aria-label="Розгорнути">□</button><button class="x" type="button" aria-label="Закрити">×</button></div></div><div class="wb"></div>';
+  $(".tt",w).textContent=a.title;
+  const dr=wins.getBoundingClientRect();
+  const W=Math.min(a.w,dr.width-8),H=Math.min(a.h,dr.height-8);
+  const k=spawn++%6;
+  w.style.width=W+"px";w.style.height=H+"px";
+  w.style.left=Math.max(0,Math.min(dr.width-W,24+k*30))+"px";
+  w.style.top=Math.max(0,Math.min(dr.height-H,16+k*30))+"px";
+  wins.appendChild(w);
+  const rec={w,closers:[],id,api:null};
+  open[id]=rec;
+  const wb=$(".wb",w);
+  a.build(wb,rec,opts||{});
+  w.addEventListener("pointerdown",()=>{if(open[id]&&!w.dataset.on)front(id)});
+  $(".x",w).onclick=()=>closeApp(id);
+  $(".m",w).onclick=()=>minimize(id);
+  $(".mx",w).onclick=()=>w.classList.toggle("max");
+  $(".tb",w).addEventListener("dblclick",e=>{if(!e.target.closest("button"))w.classList.toggle("max")});
+  drag(w);
+  front(id,true);
+}
+function front(id,quiet){
+  const was=open[id].w.dataset.on||quiet;
+  Object.values(open).forEach(r=>r.w.dataset.on="");
+  if(!was&&!RM){const w=open[id].w;w.classList.remove("fr");void w.offsetWidth;w.classList.add("fr");setTimeout(()=>w.classList.remove("fr"),260)}
+  open[id].w.style.zIndex=++zi;
+  open[id].w.dataset.on="1";
+  renderTasks();
+}
+function closeApp(id){
+  const r=open[id];if(!r)return;
+  r.closers.forEach(f=>{try{f()}catch(e){}});
+  delete open[id];
+  r.w.classList.add("out");
+  setTimeout(()=>r.w.remove(),RM?0:170);
+  const rest=Object.keys(open).filter(k=>!open[k].w.classList.contains("min")).sort((a,b)=>open[b].w.style.zIndex-open[a].w.style.zIndex);
+  if(rest.length)front(rest[0],true);else renderTasks();
+}
+function minimize(id){
+  const r=open[id];r.w.classList.add("out");
+  setTimeout(()=>{r.w.classList.remove("out");r.w.classList.add("min");r.w.dataset.on="";renderTasks()},RM?0:170);
+}
+function restore(id){const w=open[id].w;w.classList.remove("min");w.classList.remove("in");void w.offsetWidth;w.classList.add("in")}
+function renderTasks(){
+  tasks.innerHTML="";
+  Object.keys(open).forEach(id=>{
+    const r=open[id],mn=r.w.classList.contains("min");
+    const b=el("button","tk"+(r.w.dataset.on?" on":"")+(mn?" mn":""));
+    b.type="button";b.textContent=APPS[id].short||APPS[id].title;
+    b.onclick=()=>{if(mn){restore(id);front(id)}else if(r.w.dataset.on)minimize(id);else front(id)};
+    tasks.appendChild(b);
+  });
+  document.querySelectorAll(".ico").forEach(i=>i.classList.toggle("run",!!open[i.dataset.app]));
+}
+function drag(w){
+  const tb=$(".tb",w);
+  tb.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button")||innerWidth<=720||w.classList.contains("max"))return;
+    const sx=e.clientX,sy=e.clientY,ox=w.offsetLeft,oy=w.offsetTop;
+    tb.setPointerCapture(e.pointerId);
+    const mv=ev=>{
+      const pr=wins.getBoundingClientRect();
+      w.style.left=Math.max(0,Math.min(pr.width-w.offsetWidth,ox+ev.clientX-sx))+"px";
+      w.style.top=Math.max(0,Math.min(pr.height-w.offsetHeight,oy+ev.clientY-sy))+"px";
+    };
+    const up=()=>{tb.removeEventListener("pointermove",mv);tb.removeEventListener("pointerup",up)};
+    tb.addEventListener("pointermove",mv);tb.addEventListener("pointerup",up);
+  });
+}
+function onState(rec,fn){hooks.add(fn);rec.closers.push(()=>hooks.delete(fn))}
+function glitchWin(id){return;const r=open[id];if(!r||RM)return;r.w.classList.remove("gl");void r.w.offsetWidth;r.w.classList.add("gl");setTimeout(()=>r.w.classList.remove("gl"),1100)}
+addEventListener("keydown",e=>{
+  if(e.key==="Escape"){const f=Object.keys(open).find(k=>open[k].w.dataset.on);if(f&&!e.target.closest("textarea,input"))closeApp(f)}
+});
+
+/* ---------- rain over a seeded skyline ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function skyline(W,H,seed,veil,figs,tint,ph){
+  const PG=[["#2b343c","#566370"],["#46535d","#8997a2"],["#1c1822","#7a4c36"],["#05070b","#141b22"]],PL=[.05,.03,.24,.17],pg=PG[ph==null?3:ph],pl=PL[ph==null?3:ph];
+  const o=document.createElement("canvas");o.width=W;o.height=H;
+  const c=o.getContext("2d"),r=mulberry(seed);
+  const g=c.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,ph==null?"#080b0e":pg[0]);g.addColorStop(1,ph==null?"#1a222a":pg[1]);
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  let x=-10;
+  while(x<W){
+    const bw=60+r()*90,bh=H*(.28+r()*.42),sh=14+(r()*10|0);
+    c.fillStyle="rgb("+sh+","+(sh+5)+","+(sh+9)+")";
+    c.fillRect(x,H-bh,bw,bh);
+    for(let wy=H-bh+10;wy<H-26;wy+=21){
+      for(let wx=x+8;wx<x+bw-14;wx+=15){
+        const q=r();
+        if(q<(ph==null?.16:pl)){c.fillStyle=q<.04?"rgba(160,185,210,.5)":"rgba(232,194,122,"+(ph===1?.25:.6)+")";c.fillRect(wx,wy,9,13);(o.wins=o.wins||[]).push([wx,wy])}
+        else{c.fillStyle="rgba(255,255,255,.025)";c.fillRect(wx,wy,9,13)}
+      }
+    }
+    x+=bw+4+r()*14;
+  }
+  const gg=c.createLinearGradient(0,H*.8,0,H);
+  gg.addColorStop(0,"rgba(8,10,12,0)");gg.addColorStop(1,"rgba(8,10,12,.9)");
+  c.fillStyle=gg;c.fillRect(0,H*.8,W,H*.2);
+  (figs||[]).forEach(f=>{
+    const fx=W*f.x,fy=H*f.y;
+    c.fillStyle="rgba(232,194,122,.16)";c.beginPath();c.arc(fx,fy-6,38,0,7);c.fill();
+    c.fillStyle="#05070a";c.fillRect(fx-5,fy-24,10,24);c.beginPath();c.arc(fx,fy-30,5,0,7);c.fill();
+    if(f.ph){c.fillStyle="rgba(210,225,240,.9)";c.fillRect(fx+5,fy-30,3,4)}
+    if(f.hair){c.fillStyle=f.hair;c.fillRect(fx-6,fy-36,12,5)}
+  });
+  if(tint){c.fillStyle=tint;c.fillRect(0,0,W,H)}
+  if(veil){c.fillStyle="rgba(8,11,14,"+veil+")";c.fillRect(0,0,W,H)}
+  return o;
+}
+function rainOn(cv,seed,veil,figs,tintFn,phFn){
+  const c=cv.getContext("2d");
+  let fr=0,W=0,H=0,bg=null,drops=[],drips=[],rip=[],flick=[],raf=0,dead=false,wt=Math.random()*6,wind=.15;
+  const mkDrip=init=>({x:Math.random()*W,y:init?Math.random()*H:-12,r:1.3+Math.random()*2.1,vy:.3+Math.random()*.8,pause:0,tr:0});
+  function build(){
+    const r=cv.getBoundingClientRect();
+    W=cv.width=Math.max(2,r.width|0);H=cv.height=Math.max(2,r.height|0);
+    bg=skyline(W,H,seed,veil,figs,tintFn?tintFn():null,phFn?phFn():null);
+    const n=Math.min(280,Math.max(30,W*H/8000|0));
+    drops=[];
+    for(let i=0;i<n;i++){const z=Math.random();drops.push({x:Math.random()*W*1.2,y:Math.random()*H,z,l:6+z*16,v:6+z*10})}
+    const m=H>220?Math.min(16,W*H/70000|0):0;
+    drips=[];for(let i=0;i<m;i++)drips.push(mkDrip(true));
+    rip=[];flick=[];
+    draw();
+  }
+  function draw(){
+    if(!bg)return;
+    c.drawImage(bg,0,0);
+    /* миготіння вікон у далеких будинках */
+    for(const f of flick){c.fillStyle=f.on?"rgba(255,228,165,"+f.a.toFixed(2)+")":"rgba(7,10,13,"+f.a.toFixed(2)+")";c.fillRect(f.x,f.y,9,13)}
+    /* брижі від крапель на землі */
+    if(rip.length){c.lineWidth=1;for(const p of rip){c.strokeStyle="rgba(190,205,220,"+p.a.toFixed(3)+")";c.beginPath();c.ellipse(p.x,p.y,p.r,p.r*.28,0,0,6.283);c.stroke()}}
+    /* два шари дощу: далекий тонкий, ближній яскравий */
+    c.lineCap="round";
+    c.strokeStyle="rgba(170,188,205,.13)";c.lineWidth=.8;c.beginPath();
+    for(const d of drops){if(d.z<.55){c.moveTo(d.x,d.y);c.lineTo(d.x-d.l*wind,d.y+d.l)}}c.stroke();
+    c.strokeStyle="rgba(205,220,235,.3)";c.lineWidth=1.3;c.beginPath();
+    for(const d of drops){if(d.z>=.55){c.moveTo(d.x,d.y);c.lineTo(d.x-d.l*wind,d.y+d.l)}}c.stroke();
+    /* краплі, що повзуть по склу вікна */
+    for(const d of drips){
+      if(d.tr>2){const g=c.createLinearGradient(0,d.y-d.tr,0,d.y);g.addColorStop(0,"rgba(190,205,225,0)");g.addColorStop(1,"rgba(190,205,225,.14)");c.strokeStyle=g;c.lineWidth=d.r*.7;c.beginPath();c.moveTo(d.x,d.y-d.tr);c.lineTo(d.x,d.y);c.stroke()}
+      c.fillStyle="rgba(170,190,210,.1)";c.beginPath();c.arc(d.x,d.y,d.r,0,6.283);c.fill();
+      c.strokeStyle="rgba(235,243,250,.28)";c.lineWidth=.8;c.beginPath();c.arc(d.x,d.y,d.r,3.6,5.5);c.stroke();
+    }
+  }
+  function tick(){
+    if(dead||!cv.isConnected)return;
+    if(cv.id==="sky"){fr^=1;const ow=Object.keys(open).filter(k=>!open[k].w.classList.contains("min"));
+      if(document.hidden||(innerWidth<=720&&ow.length)||(ow.length&&fr)){raf=requestAnimationFrame(tick);return}}
+    wt+=.004;wind=.12+Math.sin(wt)*.06+Math.sin(wt*2.7)*.03;
+    for(const d of drops){
+      d.y+=d.v;d.x-=d.v*wind;
+      if(d.y>H){
+        if(d.z>.6&&H>160&&rip.length<26&&Math.random()<.3)rip.push({x:d.x,y:H-3-Math.random()*H*.06,r:1,a:.3});
+        d.y=-d.l;d.x=Math.random()*W*1.2;
+      }
+    }
+    for(let i=rip.length-1;i>=0;i--){const p=rip[i];p.r+=.45;p.a-=.012;if(p.a<=0)rip.splice(i,1)}
+    for(const d of drips){
+      if(d.pause>0){d.pause--;d.tr*=.985}
+      else{d.y+=d.vy;d.tr=Math.min(70,d.tr+d.vy*.6);if(Math.random()<.012)d.pause=(25+Math.random()*90)|0}
+      if(d.y>H+10)Object.assign(d,mkDrip(false));
+    }
+    if(bg.wins&&bg.wins.length&&flick.length<7&&Math.random()<.04){
+      const w=bg.wins[(Math.random()*bg.wins.length)|0];
+      flick.push({x:w[0],y:w[1],a:.85,on:Math.random()<.3,life:(14+Math.random()*50)|0});
+    }
+    for(let i=flick.length-1;i>=0;i--){const f=flick[i];f.life--;if(f.life<8)f.a*=.8;if(f.life<=0)flick.splice(i,1)}
+    draw();raf=requestAnimationFrame(tick);
+  }
+  build();
+  const ro=new ResizeObserver(()=>{build()});ro.observe(cv);
+  if(!RM)raf=requestAnimationFrame(tick);
+  const stop=()=>{dead=true;cancelAnimationFrame(raf);ro.disconnect()};
+  stop.rebuild=build;
+  return stop;
+}
+const TINTS={anya:"rgba(235,167,198,.07)",olya:"rgba(227,138,46,.07)",alone:"rgba(240,244,246,.05)"};
+const sky=rainOn($("#sky"),57,.5,null,()=>branch?TINTS[branch]:null,()=>cur.ph);
+
+/* ---------- audio: system hum + helpers ---------- */
+let AC=null,hum=null;
+function actx(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC}
+$("#noise").onclick=()=>{
+  const b=$("#noise");
+  try{
+    if(hum){hum.stop();hum=null;b.setAttribute("aria-pressed","false");return}
+    const A=actx();
+    const buf=A.createBuffer(1,A.sampleRate*2,A.sampleRate),d=buf.getChannelData(0);
+    let l=0;
+    for(let i=0;i<d.length;i++){const w=Math.random()*2-1;l=(l+.02*w)/1.02;d[i]=l*3.2}
+    hum=A.createBufferSource();hum.buffer=buf;hum.loop=true;
+    const g=A.createGain();g.gain.value=.45;
+    hum.connect(g);g.connect(A.destination);hum.start();
+    b.setAttribute("aria-pressed","true");
+  }catch(e){}
+};
+let rainN=null;
+$("#rain").onclick=()=>{
+  const b=$("#rain");
+  try{
+    if(rainN){rainN.stop();rainN=null;b.setAttribute("aria-pressed","false");return}
+    const A=actx(),buf=A.createBuffer(1,A.sampleRate*3,A.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const s=A.createBufferSource();s.buffer=buf;s.loop=true;
+    const hp=A.createBiquadFilter();hp.type="highpass";hp.frequency.value=900;
+    const lp=A.createBiquadFilter();lp.type="lowpass";lp.frequency.value=7000;
+    const g=A.createGain();g.gain.value=.12;
+    s.connect(hp);hp.connect(lp);lp.connect(g);g.connect(A.destination);s.start();
+    const tv=setInterval(()=>{const k=[.1,.07,.14,.2][cur.ph];g.gain.setTargetAtTime(k,A.currentTime,1.5)},3000);
+    const th=setInterval(()=>{if(cur.ph<2||Math.random()<.5)return;const n=A.createBufferSource();n.buffer=buf;const f=A.createBiquadFilter();f.type="lowpass";f.frequency.value=140;const gg=A.createGain();gg.gain.setValueAtTime(0,A.currentTime);gg.gain.linearRampToValueAtTime(.7,A.currentTime+.6);gg.gain.exponentialRampToValueAtTime(.001,A.currentTime+3.5);n.connect(f);f.connect(gg);gg.connect(A.destination);n.start();n.stop(A.currentTime+4)},22000);
+    rainN={stop(){s.stop();clearInterval(tv);clearInterval(th)}};
+    b.setAttribute("aria-pressed","true");
+  }catch(e){}
+};
+if(!RM)(function bolt(){setTimeout(()=>{if(cur.ph===3&&Math.random()<.6){const e=$("#bolt");e.classList.remove("on");void e.offsetWidth;e.classList.add("on")}bolt()},18000+Math.random()*22000)})();
+function pluck(freq,when,gainV){
+  const A=actx(),sr=A.sampleRate,n=Math.floor(sr*1.8),buf=A.createBuffer(1,n,sr),d=buf.getChannelData(0);
+  const p=Math.max(2,Math.round(sr/freq));
+  for(let i=0;i<p;i++)d[i]=Math.random()*2-1;
+  for(let i=p;i<n;i++)d[i]=(d[i-p]+d[i-p+1])*.4985;
+  const s=A.createBufferSource();s.buffer=buf;
+  const g=A.createGain();g.gain.value=gainV||.5;
+  s.connect(g);g.connect(A.destination);s.start(A.currentTime+(when||0));
+}
+function tickClock(){$("#clock").textContent=new Date().toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"})}
+tickClock();setInterval(tickClock,20000);
+function whiteFlash(){
+  const w=$("#whiteout");w.classList.add("on");
+  setTimeout(()=>w.classList.remove("on"),RM?600:2600);
+}
+/* ---------- characters ---------- */
+const CH=[
+{n:"Даня",full:"Даня Німеров Станіславович",role:"Протагоніст",g:"main",c:"var(--danya)",age:"15",born:"25.08.2010",h:"179 см",cls:"10-А, ліцей №57",
+ look:"Коричневе волосся, карі очі, неформальний одяг. Чорний і білий кольори.",
+ tr:"Інтроверт, песиміст, недовірливий. Розбирається в комп’ютерах, але в особистому житті діє хаотично. Буває лінивим, довго тримає образу, зате вірний тим, кого вважає близькими. Живе з матір’ю, яка майже постійно працює, батька не пам’ятає. Рано навчився покладатися на себе, але не навчився просити про допомогу.",
+ li:["комп’ютери й Reddit","гітара","навушники","енергетики","кава 3 в 1","смажена картопля"],
+ fn:"Він не просто спостерігач. Приймає рішення, відмовляє людям, уникає розмов і іноді сам погіршує ситуацію. Вся історія йде через його сприйняття, але це не робить усе побачене неправдивим."},
+{n:"Оля",full:"Оля Вруча Юріївна",role:"Подруга Дані",g:"main",c:"var(--olya)",age:"16",born:"30.07.2009",h:"176 см",cls:"10-Б, ліцей №57",
+ look:"Руде волосся, карі очі із зеленуватим відливом. Коричневий, помаранчевий і чорний кольори.",
+ tr:"Відкрита, ініціативна, говорить прямо й не любить церемоній. Впевненість частково удавана: всередині вона може бути невпевненою, образливою й надто настирною. Росла в суворій сім’ї, де чекали ідеальності. Бунтує, але повністю не звільнилася.",
+ li:["гітара","малювання попелом","кава 3 в 1","жуйки","кіт Стріпс","допомога по дому"],
+ fn:"Пропонує діяти, а не чекати. Дає Дані союзника, з яким можна дивитися на небезпеку прямо. Безпеки ця близькість не гарантує."},
+{n:"Аня",full:"Аня Кицик Василівна",role:"Однокласниця Дані",g:"main",c:"var(--anya)",age:"15",born:"13.02.2010",h:"169 см",cls:"10-А, ліцей №57",
+ look:"Фарбоване біло-рожеве волосся, рожево-карі очі (генетична особливість). Білий, рожевий і чорний кольори.",
+ tr:"Емпатична, уважна до деталей, має фотографічну пам’ять і гарний почерк, добре малює. Замкнена, сором’язлива, недовірлива, місцями до параної. Батьки багато вимагали й мало були поруч, батько формально є, але за кордоном. Боїться комп’ютерних вірусів.",
+ li:["малювання","еспресо","гарячий шоколад","маршмелоу","крутити волосся"],
+ fn:"Вона вміє бути ніжною й підтримувальною, але потреба в близькості перетворює турботу на контроль. Пам’ятає те, що Даня забув, і тому може формувати його спогади."},
+{n:"Рома",full:"Роман Савчук Олексійович",role:"Найкращий друг Дані",g:"main",c:"var(--roma)",age:"16",born:"24.08.2009",h:"179 см",cls:"10-А, ліцей №57",
+ look:"Коричневе волосся, карі очі, недбала зачіска. Червоний, білий і чорний кольори.",
+ tr:"Екстраверт і оптиміст, добрий порадник, легко організовує інших. Спортивний, уміє готувати. Буває запальним, грубуватим і слабшим у навчанні. Виріс у відносному достатку, колись довго тримався осторонь і тепер боїться втратити близьких.",
+ li:["волейбол","тренажерний зал","готувати їжу","шашлик","квас","пес Шмаль"],
+ fn:"Голос повсякденної реальності. Пояснює все простими причинами, через це його слова іноді звучать як знецінення. Не зникає, навіть коли Даня його відштовхує."},
+{n:"Аліса",role:"Дівчина Влада",g:"orb",c:"var(--other)",age:"17",tr:"Спокійна, хитра, допитлива. Любить розв’язувати головоломки.",li:["комп’ютери","моди для ігор"],
+ fn:"Збирає інформацію й спостерігає за оточенням Дані. Розслідування для неї спосіб навести лад у хаосі. Повної відповіді вона не має."},
+{n:"Влад",role:"Хлопець Аліси",g:"orb",c:"var(--other)",age:"17",tr:"Безстрашний, імпульсивний, схильний до ризику.",li:["покинуті будівлі"],
+ fn:"Натрапив на те, чого не мав бачити. Запускає історію про флешку, щоб відвернути увагу від справжньої небезпеки. Його брехня не означає, що неправдиве кожне слово."},
+{n:"Софія",role:"Ім’я з чужих розмов",g:"orb",c:"var(--other)",age:"16",tr:"Емоційна, загадкова, трохи ексцентрична.",li:["малювання","субкультури"],
+ fn:"Знає більше, ніж готова розповісти. Її зв’язок із небезпекою видно за реакціями й за тим, про що вона мовчить."},
+{n:"Ліза",role:"Невідомий номер",g:"orb",c:"var(--other)",age:"15",tr:"Емоційна, чутлива, легко захоплюється людьми й ідеями.",li:["гітара просто неба","атмосферні пісні"],
+ fn:"Телефонує Дані: плач, крики, обрив. Її стан і доля лишаються невідомими. Музика нагадує про неї, але Даня не певен, чи правильно це пов’язує."},
+{n:"Віка",role:"Та, що переказує",g:"orb",c:"var(--other)",age:"16",tr:"Аналітична, мрійлива.",li:["кінофестивалі","рецензії"],
+ fn:"Робить із будь-якої історії драму. У її переказі справжній фрагмент події стоїть поруч із перебільшенням."},
+{n:"Стас",role:"З нотатником",g:"orb",c:"var(--other)",age:"16",tr:"Мрійливий, відсторонений.",li:["замальовки","експериментальна музика"],
+ fn:"Малює дивні психоделічні образи. Даня може читати в них натяк, хоча малюнки нічого не доводять."},
+{n:"Спортіки",role:"Серьога, Юра",g:"school",c:"var(--other)",tr:"Швидко підхоплюють чутки. Юра пізніше тисне на Даню, щоб дістати флешку.",li:[],fn:"Тиск, який приходить зі звичайного коридору."},
+{n:"Нефори",role:"Саша, Лєра, Женя",g:"school",c:"var(--other)",tr:"Саша тягне інформацію, Лєра пропонує дізнатися більше, Женя мовчить.",li:[],fn:"Мовчання Жені Даня заповнює власними мотивами."},
+{n:"Нормісня",role:"Настя, Ангеліна, Віка",g:"school",c:"var(--other)",tr:"Повторюють чутки, а Віка надає їм драматичної форми.",li:[],fn:"Показують, як інформація стає виставою."}
+];
+
+/* ---------- story: 20 days, four phases each ---------- */
+const PH=["Ранок","День","Вечір","Ніч"];
+const WDAY=["Понеділок","Вівторок","Середа","Четвер","П’ятниця","Субота","Неділя"],CLK=["07:12","13:40","19:05","02:47"];
+const PHSKY=[.28,.12,.4,.62];
+const D1=[
+{t:"Звичайна п’ятниця",s:"ok",r:"Даня не одразу встає, перевіряє телефон і збирається до ліцею. На столі комп’ютер, гітара, навушники, речі без порядку. Двори, знайомий маршрут.",d:"Ліцей: коридори, клас, жарти й суперечки про звичайні справи. Після уроків Даня гуляє з Ромою та Олею без мети. Школа, музика, комп’ютери, місцеві новини.",v:"Вдома він їсть, вмикає комп’ютер, грає на гітарі або слухає музику.",n:"Перед сном дивиться з вікна на двір. Світ звичайний, тільки трохи похмуріший, ніж треба."},
+{t:"Фотографія",s:"sub",r:"Вихідний. Даня довго спить, сидить на Reddit і відкладає домашні справи.",d:"Аліса пише: за Владом стежать, допоможи розібратися. Даня відмовляє, Влад йому не друг. Потім на балконі він бачить рух унизу. На мить здається, що хтось його фотографує.",v:"Телефонує Ромі, виходить погуляти. Розповідає про Алісу й балкон. Рома обіцяє розпитати, але доказом це не вважає.",n:"Перевіряє вікно й телефон, потім ховається за комп’ютером."},
+{t:"Дзвінок Лізи",s:"unk",r:"Невідомий номер. Лізин голос уривчастий, на тлі плач і крики. Дзвінок обривається. Передзвін нічого не дає.",d:"Аня відповідає сухо: роздратована, налякана чи просто мовчить, незрозуміло. Оля не відчиняє двері. Рома не бере слухавку.",v:"Даня виходить покурити й складає події докупи. Дзвінок, Аня, двері Олі, мовчання Роми починають здаватися пов’язаними.",n:"Прокручує почуті звуки в голові, але вже не пригадує, що саме було сказано."},
+{t:"Звичайний понеділок",s:"unk",g:1,r:"Після поганого сну Даня збирається до ліцею й повторює в голові вчорашні події.",d:"Усе виглядає звичайним. Але дехто не пам’ятає, щоб Даня дзвонив чи кудись ходив. Це ще не доказ, проте сумнів уже тут.",v:"Намагається записати події в нотатки й помічає, що деталі не формулюються.",n:"Ліфт, труби, кроки на сходах. Звуки будинку занадто виразні. Даня не надає їм значення."},
+{t:"Чутки",s:"sub",r:"У коридорі уривки розмов про Влада, покинуті будівлі й чужі файли. Даня не розуміє, чи це про нього.",d:"Віка переказує історію з уже перебільшеними деталями. Дехто каже, що існує флешка з компроматом. Даня вперше чує про неї.",v:"Гуляє з Ромою повз гаражі. Група учнів щось обговорює. Ніхто до Дані не звертається, але він відчуває, що це про нього.",n:"Шукає Влада в інтернеті. Результати нічого не пояснюють."},
+{t:"Компанії",s:"sub",r:"Слухає музику дорогою й переконує себе, що чутки його не стосуються.",d:"Спортіки обговорюють флешку як реальну річ. Нефори мають власну версію. Нормісня дописує деталі. Одна подія, три версії.",v:"Даня, Аня, Оля й Рома разом. Розмова звичайна. Але Аня уважно стежить за Данею щоразу, коли чути слово «флешка».",n:"Сидить за комп’ютером і розділяє те, що бачив сам, і те, що почув."},
+{t:"Влад",s:"sub",r:"Повідомлення чи допис, де згадано Влада. Інформація неповна.",d:"Даня бачить Влада: той озирається, уникає питань, може сказати щось правдиве й одразу змінює тему. Аліса спостерігає здалеку.",v:"Рома каже, що флешку обговорюють усі, але показати її ніхто не може.",n:"Даня згадує поведінку Влада й починає підозрювати, що той щось приховує. Або надто багато думає."},
+{t:"Тиск і звичайні речі",s:"sub",r:"Втомлений Даня йде до ліцею. Дощ, транспорт, дорога здається довшою.",d:"Юра розпитує про флешку. Даня навіть не певен, що вона існує.",v:"Оля, Рома й Даня ходять до магазину, сидять біля гаражів, слухають музику. Розмова про майбутнє, школу, батьків, про те, чому всі так швидко втомлюються.",n:"Даня засинає за комп’ютером, музика ще грає в навушниках."},
+{t:"Незібрана хронологія",s:"unk",g:1,r:"У нотатках між двома записами діра. Даня не може її пояснити. Небезпечного в цьому, можливо, нічого, але послідовність не відновлюється.",d:"Відновлює день за дрібницями: час повідомлень, фото, історія браузера, маршрут до магазину. Щось збігається, щось ні. Аліса теж збирає інформацію.",v:"Просить Рому чи Аню підтвердити один спогад. Відповідь розходиться з його версією. Різниця невелика.",n:"Вимикає комп’ютер і вмикає знову, щоб перевірити записи. Не довіряє ні пам’яті, ні нотаткам."},
+{t:"Провал",s:"unk",g:1,r:"Уривчастий сон. Речі в кімнаті трохи чужі. Даня збирається і втрачає час.",d:"День приходить фрагментами. Знайомі місця, уривки розмов. Як він потрапляє з одного місця в інше, незрозуміло. Аня, Оля чи Рома з’являються без послідовності.",v:"Додому виснаженим. У пам’яті мокрий асфальт, шум у навушниках, екран телефона, чужа рука, двері під’їзду. Флешка біля комп’ютера.",n:"Час перестає йти рівно. Сцена обривається на вентиляторі, дощі чи вібрації телефона."},
+{t:"Точка вибору",s:"ok",pick:1,r:"Даня прокидається близько 14:00. У роті сухо, голова важка. Телефон повний пропущених. Біля клавіатури флешка.",d:"Шість днів ніби випали. Дата, повідомлення, браузер дають не всі відповіді. На екрані дзвінки від Ані, Олі й Роми. Кому відповісти?",v:"Вибір не вирішує, хто каже правду. Він вирішує, через чиї реакції Даня тримається за реальність.",n:"У будь-якому варіанті ніч закінчується відчуттям, що колишнє життя не повернеться."}
+];
+const BR={
+anya:[
+{t:"Захист",s:"sub",r:"Аня поруч. У квартирі тиша, чайник, звуки під’їзду. Її присутність знижує напругу, але вона постійно слідкує, де флешка.",d:"Настя й Ангеліна розпитують. Аня відповідає надто точно, цитуючи чужі слова. Чи це пам’ять, чи зброя?",v:"Вони купують їжу й готують щось просте. Розмова про звичайне повертає Дані відчуття нормальності.",n:"Даня за комп’ютером, Аня поруч, час від часу дивиться на екран. Флешка лишається між ними невисловленою."},
+{t:"Рома не розуміє",s:"sub",r:"Сіре небо, дорога до ліцею. Коридори шумніші. Чи це вони, чи Даня прислухається?",d:"Юра притискає Даню запитаннями, Аня втручається надто різко. Рома просить поговорити без неї. Даня сприймає це як спробу відібрати єдину людину поруч. Стас щось малює, Аліса питає про Влада.",v:"Пельмені чи інша проста їжа. Аня лишається й засинає в одязі.",n:"Даня слухає шум комп’ютера. Полегшення, що не сам, і думки про слова Роми."},
+{t:"П’ять секунд",s:"unk",g:1,r:"Двір і покинута будівля виглядають звично, але знайомі звуки віддалені.",d:"Віка переказує нову драматичну версію. Даня чує гітару Лізи, чи згадує її? У магазині звук і картинка зміщуються приблизно на п’ять секунд.",v:"Аня просить не приховувати від неї такі моменти. У турботі страх і бажання бути єдиною, хто має доступ до його стану.",n:"Даня засинає під гудіння системника. Звуки зливаються в один шум."},
+{t:"Нефори",s:"sub",r:"Даня довго сидить на балконі й дивиться на двір. Аня нагадує, що треба вийти.",d:"Гаражі, Саша, Лєра й Женя. Саша тягне інформацію, Лєра обіцяє дізнатися, Женя мовчить. Аня відводить Даню. Захищає чи не хоче, щоб хтось дізнався раніше за неї?",v:"Вечірні провулки. Чому всі цікавляться флешкою, якщо ніхто не знає, що на ній?",n:"Даня перевіряє замок. Аня помічає й не коментує, потім залишається в кімнаті."},
+{t:"Дзвінок Влада",s:"unk",g:1,r:"Дзвінок. На екрані Влад.",d:"Влад визнає: історія про флешку була брехнею. Решти не пояснює. Які слова правдиві? Потім сильніший збій, простір здається неправильним, Аня допомагає зосередитися на деталях.",v:"Прогулянка двором. Вікна багатоповерхівки. Скільки людей за ними не знають про його життя.",n:"Даня дивиться в стелю. Зізнання не принесло полегшення, а лише відкрило новий шар невідомого."},
+{t:"Обіцянка",s:"sub",r:"Кава, збори. Даня перевіряє, чи флешка на місці.",d:"Юра вимагає флешку або пояснень. Аня нагадує, що Даня обіцяв нікому її не віддавати. Це було його рішення? Рома не згоден з Анею: тримати флешку заради неї не означає захищати себе.",v:"Один навушник на двох. Тепло, майже спокій, на контрасті з конфліктом.",n:"Даня не спить. Обіцянка стала ще одним способом не втратити Аню."},
+{t:"Стукіт",s:"unk",g:1,r:"Штори завішені. Аня намагається повернути Даню до звичайного: їжа, вода, свіже повітря.",d:"Даня за комп’ютером, не може зосередитися. Повідомлення Роми, Олі й Аліси без відповіді. Між ними з Анею росте напруга. Її підтримка допомагає й водночас прив’язує.",v:"Стукіт у вікно, хоча квартира на другому поверсі. Чи був там хтось, чи Даня помилився з напрямком? Звуки стають надто гучними.",n:"Аня сидить поруч на підлозі, допомагає дихати й зосередитися на деталях. Це не доказ особливого кохання, а одна людина, що підтримує іншу без відповідей. Стукіт так і лишається без пояснення."},
+{t:"Облога",s:"unk",r:"Шум із вулиці, голоси під вікнами. Скільки їх, не зрозуміло. Аня просить не виходити.",d:"Стукіт у двері, дзвінки. Спортіки, нормісня й ті, хто просто прийшов подивитися. Аліса пише: історія Влада ховає іншу небезпеку. Рома хвилюється вже не за флешку, а за Даню.",v:"Даня сідає за комп’ютер, перевіряє структуру флешки. Аня просить подумати, що зміниться після відкриття.",n:"Запуск розшифрування. Індикатори, повідомлення, назва каталогу. Файл відкрито, але Даня зупиняється перед переглядом."},
+{t:"Файл і дах",s:"unk",pick:1,r:"Короткий сон. Вода, їжа, телефон, одяг, механічно, ніби за інструкцією. Файл доступний.",d:"Даня відкриває файл «АНЯ». Спершу назва, потім реакція, потім інтерпретація.",v:"Він бачить: Аня знала більше, ніж казала. Її погляд здається скляним. Піти можна, але тоді лишишся сам із провалами пам’яті.",n:"Даня приймає її версію. Не тому, що вона доведена, а тому, що не хоче бути наодинці. Дах, місто мокре після дощу. Тепло й небезпечна залежність."}],
+olya:[
+{t:"Прямий конфлікт",s:"sub",r:"Оля висміює паніку. Вони беруть каву й ідуть до ліцею.",d:"Біля ліцею спортіки, Рома намагається зупинити сварку. Оля різка, але не вороже: Рома надто довго всіх заспокоює.",v:"Гаражі чи труби біля покинутої будівлі. Розмови про життя, друзів і про те, чому люди люблять перебільшувати чужі проблеми.",n:"Стара гра на комп’ютері. На кілька годин флешка перестає бути центром."},
+{t:"Дружба без сентиментів",s:"ok",r:"Оля чекає або пише, щоб Даня не затримувався.",d:"Знову флешка в коридорах. Рома хоче серйозно, Даня ухиляється. Оля захищає, але її зухвалість лише привертає увагу. Стас із нотатником, Аліса розпитує про Влада.",v:"Дах невисокої будівлі чи гаражі. Енергетик, музика, жарти зі шкільних пліток.",n:"Старі ігри. Оля не витягує з Дані кожну думку. Близькість тримається на тому, що можна мовчати поруч."},
+{t:"Провал",s:"unk",g:1,r:"Втомлений Даня. Оля пише, щоб виходив, і не приймає відмову.",d:"Віка переказує. Лізина гітара, чутна чи згадана. У розмові з Олею п’ять секунд пропадають. Вона різко повертає його в теперішнє. Жарти можуть ненавмисно знецінити страх.",v:"Район. Даня не показує, як його налякало. Оля бачить, що щось не так, але не знає, як про це говорити.",n:"Даня слухає музику за комп’ютером, Оля поруч. Він уже не може зосередитися."},
+{t:"Нефори",s:"sub",r:"Курить на балконі, дивиться на мокрі двори. Оля внизу біля під’їзду.",d:"Територія нефорів. Саша випитує, Лєра обіцяє дізнатися через знайомих, Женя мовчить. Оля обриває Сашу й відводить Даню. Він помічає: їй це подобається.",v:"Вечірні провулки. Оля захищає його чи просто не терпить чужого контролю?",n:"Даня перевіряє двері й вікна. Оля не сміється, але й не вдає, що може гарантувати безпеку."},
+{t:"Влад і Рома",s:"unk",g:1,r:"Дзвінок Влада.",d:"Влад каже, що історія про флешку вигадана, щоб відвести увагу. Оля хоче знайти його. Рома вважає, що Оля підштовхує Даню до ризику. Даня чує недовіру. Далі сильний збій, Оля повертає його до конкретних речей.",v:"Оля проводжає Даню додому. Не втішає довго, але лишається.",n:"Даня не спить. Чому кожна спроба отримати відповідь робить усе складнішим?"},
+{t:"Зухвалий ігнор",s:"sub",r:"Даня й Оля йдуть до ліцею. Погляди учнів. Вони на нього дивляться частіше чи він сам став уважнішим?",d:"Юра притискає Даню в їдальні. Оля втручається й не дає зробити розмову одностороннім тиском. Рішення все одно за Данею, відповідати чи відступити.",v:"Обговорюють флешку, пробують перевірити. Її походження ніде не прояснюється.",n:"Монітор, музика. Коротке відчуття безпеки."},
+{t:"Нічний стукіт",s:"unk",g:1,r:"Даня майже не виходить. Оля на зв’язку, але не завжди поруч.",d:"Повідомлення від Аліси й Роми без відповіді. Оля радить не витрачати день на чужі припущення, але не може відвернути його повністю.",v:"Раптовий стукіт у вікно чи двері. Даня не встиг побачити, хто. Звук викликає сильний збій і страх.",n:"Оля допомагає зосередитися на простому: світло в кімнаті, шум системника, речі на столі. Без обіцянок, що все буде добре. Причина стуку невідома."},
+{t:"Відповідь без гарантії",s:"unk",r:"Голоси під вікнами. Оля намагається з’ясувати, хто там, але й вона не знає, чи всі пов’язані з флешкою.",d:"Юра й інші хочуть відповіді. Оля не дає лишити Даню наодинці. Аліса: історія Влада не пояснює всього, її розслідування веде до Софії, але деталей недостатньо.",v:"Даня вирішує розшифрувати флешку. Оля не обіцяє, що буде ясніше, але лишається поруч.",n:"Контейнер відкривається, файл на екрані. Даня відкладає остаточне рішення до ранку."},
+{t:"«ОЛЯ»",s:"unk",pick:1,r:"Файл із назвою «ОЛЯ». Оля могла знати більше, ніж казала, або принаймні була готова приймати невизначеність.",d:"Вона не зізнається в усьому й не пояснює кожну подію. Її реакція залишає простір для різних прочитань.",v:"Даня боїться. Небезпека могла бути ближче. Але Оля не обіцяє безпеки, не вдає, що знає відповіді, і не вимагає повної довіри.",n:"Дах. Вони мовчать і дивляться на місто. Оля лишається поруч, але не рятує. Затишку менше, ніж у гілці Ані."}],
+alone:[
+{t:"Рома приходить",s:"sub",r:"Холодна кімната, штори, авіарежим. Даня виходить до магазину, купує їжу й швидко повертається.",d:"Біля магазину бачить Аню або Олю й змінює маршрут. Приходить Рома. Хоче поговорити, пропонує прості рішення. Даня мовчить. Рома не розуміє масштабу страху.",v:"Рома йде. Даня лишається з полегшенням і соромом.",n:"Звуки в квартирі: труби, сусіди чи власна надмірна увага."},
+{t:"Шкільний шум",s:"sub",r:"Даня ненадовго з’являється в районі чи в ліцеї. Він не хоче розмов, але уникнути людей не вдається.",d:"Аліса, Стас, Віка, інші. Вони обговорюють флешку, але Даня чує не все. Аня й Оля намагаються заговорити, він відмовляється.",v:"Сидить перед флешкою. Починає уявляти, що там компромат на нього. Підтвердження немає.",n:"Засинає лише під ранок і весь час перевіряє час."},
+{t:"Відкритий провал",s:"unk",g:1,r:"Даня прокидається в тумані. Скільки він спав, невідомо.",d:"Сильний збій: предмети зміщені, звуки спотворені. Даня чекає, поки мине, сам.",v:"Рома приносить їжу, бачить виснаження, питає, що відбувається. Даня мовчить або відповідає різко.",n:"Шум системника надто гучний, час нерівний."},
+{t:"Тіні під вікном",s:"unk",r:"Світло крізь штори. Коли настав ранок, Даня не впевнений.",d:"Кроки й сміх біля будинку. Нефори, спортіки? Чи Даня не може правильно визначити, звідки звук? Силуети через штори. Він не виходить перевірити.",v:"Спроба заснути вдень перетворюється на уривчасті кошмари.",n:"Замок, вікна. Не потрібно підтверджувати, що хтось справді намагається проникнути."},
+{t:"Останній візит Роми",s:"unk",g:1,r:"Стукіт чи вібрація телефона. Даня не одразу розуміє, чи був звук насправді.",d:"Дзвінок Влада: історія про флешку була брехнею. Справжнє зізнання чи нова маніпуляція? Рома приходить востаннє, бачить, що Даня майже ні з ким не говорить. Розмова закінчується конфліктом чи мовчанням.",v:"Сильний збій. Даня без жодної зовнішньої підтримки.",n:"Лежить на підлозі чи біля ліжка. Намагається відновити відчуття часу. Жодна версія подій більше не має сенсу."},
+{t:"Замкнена кімната",s:"sub",r:"Телефон вимкнений або без звуку. Нові повідомлення бачити не хочеться.",d:"Ходить кімнатою, читає старі повідомлення й записи. Пошук закономірності посилює тривогу. Аня й Оля пишуть, Рома теж. Даня не відповідає.",v:"Дивиться на флешку й дедалі впевненіше вважає її центром проблем. Доказів нема, але думка нав’язлива.",n:"Сон уривками. У кімнаті лише комп’ютер і будинок."},
+{t:"Нічна криза",s:"unk",g:1,r:"Темрява за завішеними вікнами. Даня не хоче вмикати світло.",d:"Комп’ютер, але зосередитися неможливо. Повідомлення друзів він не читає або читає й не відповідає.",v:"Сильний стук у двері під’їзду чи різкий звук біля вікна. Джерело невідоме.",n:"Найсильніший збій у цій гілці. Без підтримки. Дезорієнтація й самотність, без графічності."},
+{t:"Остання спроба",s:"unk",r:"Шум із вулиці. Люди під будинком, але чи до нього?",d:"Знову флешка. Нотатки, повідомлення, історія браузера не дають повної картини. Реальна небезпека, що пов’язана з Владом і Софією, лишається поза його впевненим розумінням.",v:"Даня вирішує розшифрувати флешку: більше не терпить невизначеності.",n:"Руки тремтять, але він продовжує. Контейнер відкрито, на екрані файл."},
+{t:"«ДАНЯ»",s:"unk",pick:1,r:"Файл «ДАНЯ». Даня сприймає назву як доказ: він сам був джерелом усього.",d:"Перечитує записи й кожен провал пам’яті вважає підтвердженням провини. Це не об’єктивна правда, файл не доводить, що небезпеки не було.",v:"Підтверджені факти й власні висновки більше не розрізняються. Знайомі речі в кімнаті чужі.",n:"Звуки зливаються в суцільний гул. Послідовність розсипається. Білий спалах."}]
+};
+const NOTEROWS=[
+["День 1","Пʼятниця. Ліцей, потім гуляли з Ромою та Олею. Нічого особливого.","ok","Телефон: три повідомлення від Роми, час збігається. Це було."],
+["День 2","Аліса просила допомогти Владу. Відмовив. На балконі здалося, що внизу хтось мене фотографує. Не розгледів.","sub","Повідомлення Аліси є. Фотографування бачив сам Даня. Людини не розгледів."],
+["День 3","Дзвонила Ліза з чужого номера. Плач, крики, обрив. Аня відповіла так, ніби їй байдуже. Оля не відчинила. Рома мовчить.","unk","Вхідний дзвінок у журналі є. Що було на лінії, і що відчувала Аня, невідомо."],
+["День 4","Питав у ліцеї. Дехто не пам’ятає, щоб я дзвонив чи кудись ходив. Не можу сформулювати, що саме було в розмові з Лізою.","unk","Журнал дзвінків є, чужих спогадів немає. Не доказ ні в який бік."],
+["День 5","Говорять про Влада, якісь файли і флешку. Я флешки не бачив.","sub","Чутки повторюють різні люди. Звідки першоджерело, невідомо."],
+["День 6","Три компанії, три версії. Хто вигадав першим, не знаю. Аня стежила за мною, коли я чув слово «флешка».","sub","Три версії чув сам. Погляд Ані фіксує Даня. Про що вона думала, невідомо."],
+["День 7","Влад озирається і міняє тему. Щось приховує. Або я надто багато думаю.","sub","Влад озирався, це було. Висновок «приховує» належить Дані."],
+["День 8","Юра питав про флешку. Я навіть не певен, що вона є.","ok","Юра питав у присутності Роми. Це підтверджується."],
+["День 9","Записи 9-го числа не сходяться з повідомленнями в телефоні.","unk","Розбіжність є. Хто помилився, нотатки чи телефон, перевірити нічим."]
+];
+[["Дощ ще не почався, але небо важке. Мама вже пішла, на кухні лишилася тарілка.","Між уроками хтось сперечається про фільм, хтось списує. Нічого, що потрібно запам’ятовувати.","Рома жартує про вчителя, Оля мовчки слухає плеєр, Даня відчуває, що день рівний, як лінійка.","Гітара трохи розстроєна. Даня не поспішає її підкручувати."],["Реддіт пише про нову вулицю, якої Даня ніколи не бачив. Він прокручує сторінку й нічого не читає.","Аліса пише так, ніби репетирувала повідомлення. Даня не відповідає одразу.","Рома не вважає це доказом. Це майже заспокоює.","Світло у вікнах навпроти гасне поступово, не всі разом."],["Телефон мовчить. Це неприємніше за дзвінок.","Аня відповідає надто швидко й надто коротко. Даня перечитує це кілька разів.","Двері Олі виглядають так само, як завжди. Це дратує.","Він намагається вгадати, який відтінок мав голос Лізи. Не виходить."]].forEach((a,i)=>["r","d","v","n"].forEach((k,j)=>{if(a[j])D1[i][k]+=" "+a[j]}));
+const ATM=[["Сіре світло ледь тримається на склі. Десь хлопає двері під’їзду.","Холодна кімната, запах вчорашньої кави. Системник ще гуде.","Ранок мокрий. Тротуар блищить без сонця.","Чайник на кухні, у тебе над головою тягнеться труба."],["Відчинені вікна ліцею, запах крейди й мокрих курток.","Над двором висить сіра стеля. Світло рівне, без тіней.","Калюжі на асфальті відображають небо, а не людей.","Дзвінок на перерву звучить ніби крізь вату."],["Ліхтарі вмикаються один за одним, жовтий мокрий блиск.","У вікнах навпроти вечеря й телевізори. Двір порожнішає.","Дощ густішає. Тротуар темніє від краю до краю.","Запах смаженої картоплі з чужої кухні."],["Тільки гул системника й крапання з підвіконня.","Місто за склом чорне, окремі вікна горять і тремтять.","Кроки на сходах, а може, труби. Вночі різниця зникає.","Дощ уже не чутно, тільки вентилятор. Чи дощ ще йде?"]];
+function isGlitch(d){
+  if(d<=11)return !!D1[d-1].g;
+  return !!(branch&&BR[branch][d-12]&&BR[branch][d-12].g)||(!branch&&["anya","olya","alone"].some(k=>BR[k][d-12].g));
+}
+function storyDay(d,b){return d<=11?D1[d-1]:(b?BR[b][d-12]:null)}
+/* ---------- dossier ---------- */
+const DOSAT0={"Даня":[1,0],"Оля":[1,1],"Рома":[1,1],"Аліса":[2,1],"Влад":[2,1],"Аня":[3,1],"Ліза":[3,0],"Віка":[5,1],"Спортіки":[6,1],"Нефори":[6,1],"Нормісня":[6,1],"Юра":[8,1],"Стас":[13,1],"Софія":[19,1]};
+const DOSAT=Object.assign({},DOSAT0,{"Серьога":[5,1]});
+const FNAT={"Влад":[7,1],"Аня":[9,2],"Софія":[19,2],"Ліза":[14,1],"Аліса":[9,1]};
+const fnOpen=n=>!FNAT[n]||reach(FNAT[n][0],FNAT[n][1]);
+const relOpen=n=>{const a=DOSAT[n];return !a||reach(a[0],a[1])};
+const dosOpen=x=>relOpen(x.n);
+let seenD=store.get("sk-seend",{});
+APPS.dos={title:"Досьє",short:"Досьє",w:720,h:520,build(b,rec,o){
+  let filter="all";
+  const G={all:"Усі",main:"Головні",orb:"Навколо",school:"Компанії"};
+  function list(){
+    b.innerHTML="";
+    const p=el("div","pad fade");
+    const chips=el("div","chips");
+    Object.keys(G).forEach(k=>{
+      const c=el("button","chip"+(k===filter?" on":""));c.type="button";c.textContent=G[k];
+      c.onclick=()=>{filter=k;list()};chips.appendChild(c);
+    });
+    const grid=el("div","dos-grid");
+    CH.filter(x=>(filter==="all"||x.g===filter)&&dosOpen(x)).forEach(x=>{
+      const c=el("button","card");c.type="button";c.style.setProperty("--c",x.c);
+      c.innerHTML='<b>'+esc(x.n)+'</b><span>'+esc(x.role)+(x.age?" · "+x.age:"")+(seenD[x.n]?"":' <i style="color:var(--warn);font-style:normal">· нове</i>')+'</span>';
+      c.onclick=()=>detail(x);grid.appendChild(c);
+    });
+    p.append(chips,grid);const hid=CH.filter(x=>!dosOpen(x)).length;if(hid)p.appendChild(el("p","dim mono",'<span style="font-size:12px;display:block;margin-top:14px">Закрито досьє: '+hid+'. Вони відкриваються, коли людина з’являється в історії.</span>'));b.appendChild(p);b.scrollTop=0;
+  }
+  function detail(x){if(!seenD[x.n]){seenD[x.n]=1;store.set("sk-seend",seenD);emit()}
+    b.innerHTML="";
+    const p=el("div","pad dd fade");p.style.setProperty("--c",x.c);
+    const back=el("button","chip","← Усі досьє");back.type="button";back.style.alignSelf="flex-start";
+    back.onclick=list;
+    const head=el("div","dd-head");
+    head.innerHTML='<div><h2>'+esc(x.full||x.n)+'</h2><p class="dim mono" style="font-size:12px">'+esc(x.role)+'</p></div>';
+    p.append(back,head);
+    const facts=[["Вік",x.age],["Народилась/ся",x.born],["Зріст",x.h],["Клас",x.cls]].filter(f=>f[1]);
+    if(facts.length){const f=el("div","facts");f.innerHTML=facts.map(a=>"<div><small>"+a[0]+"</small>"+esc(a[1])+"</div>").join("");p.appendChild(f)}
+    if(x.look)p.appendChild(el("div","","<h3>Зовнішність</h3><p>"+esc(x.look)+"</p>"));
+    p.appendChild(el("div","","<h3>Характер</h3><p>"+esc(x.tr)+"</p>"));
+    if(x.li.length)p.appendChild(el("div","","<h3>Захоплення та звички</h3><div class=\"tags\">"+x.li.map(t=>'<span class="tag">'+esc(t)+"</span>").join("")+"</div>"));
+    p.appendChild(fnOpen(x.n)?el("details","fn","<summary>Роль в історії</summary><p>"+esc(x.fn)+"</p>"):el("p","dim mono",'<span style="font-size:12px">Запис про те, яке місце ця людина посідає в історії, з’явиться пізніше.</span>'));
+    const rl=el("button","btn sm","Показати на карті зв’язків");rl.type="button";rl.style.alignSelf="flex-start";
+    rl.onclick=()=>openApp("rel",{who:x.n});p.appendChild(rl);
+    b.appendChild(p);b.scrollTop=0;
+  }
+  rec.api=q=>{if(q.who){const x=CH.find(c=>c.n===q.who);if(x&&dosOpen(x))detail(x);else toast("Досьє ще закрите: ця людина ще не з’явилася в історії.")}};
+  list();if(o.who)rec.api(o);
+}};
+
+/* ---------- messenger ---------- */
+const THREADS=[
+{id:"alisa",n:"Аліса",c:"var(--other)",sub:"субота",at:[2,1],start:"a0",nodes:{
+  a0:{m:[["them","Привіт. Це Аліса. Є хвилина?"],["them","Влад думає, що за ним хтось стежить. Ти міг би допомогти розібратися?"]],
+      ch:[["Влад мені не друг. Я не буду втручатися.","a1"],["А чому саме я?","a2"]]},
+  a1:{m:[["them","Зрозуміла. Якщо щось помітиш, напиши."]],ch:[]},
+  a2:{m:[["them","Ти живеш поруч і розбираєшся в техніці. Більше я нічого сказати не можу."]],
+      ch:[["Все одно ні.","a1"],["Спершу поясни, що відбувається.","a3"]]},
+  a3:{m:[["them","Не знаю всього. Тому й питаю."],["sys","Даня не відповів."]],ch:[]}}},
+{id:"roma",n:"Рома",c:"var(--roma)",sub:"субота, вечір",at:[2,2],start:"r0",nodes:{
+  r0:{m:[["them","ну шо, виходиш?"]],ch:[["Вийду. Розкажу про Алісу.","r1"],["Не сьогодні.","r2"]]},
+  r1:{m:[["them","тільки без паніки. може то просто якийсь тип з телефоном"],["them","розпитаю знайомих, але нічого не обіцяю"]],ch:[["Ти мені не віриш?","r3"]]},
+  r2:{m:[["them","ну як знаєш. якщо шо, дзвони"]],ch:[]},
+  r3:{m:[["them","та вірю я"],["them","я просто кажу: найпростіше пояснення зазвичай і є правильне"],["sys","Прочитано"]],ch:[]}}},
+{id:"liza",n:"Невідомий номер",c:"var(--other)",sub:"Ліза?",at:[3,0],start:"l0",nodes:{
+  l0:{m:[["sys","Вхідний дзвінок, невідомий номер. 0:09"],["sys","Крики. Плач. Обрив."],["me","Ліза?"],["sys","Передзвін: абонент недоступний"],["sys","Передзвін: абонент недоступний"],["sys","Передзвін: абонент недоступний"]],
+      ch:[["Передзвонити ще раз","l1"]]},
+  l1:{m:[["sys","Абонент недоступний"]],ch:[["Передзвонити ще раз","l1"],["Згадати, що було на лінії","l2"]]},
+  l2:{m:[["sys","Гітара? Десь далеко чи в голові. Даня не певен, що саме чув."]],ch:[["Передзвонити ще раз","l1"]]}}},
+{id:"anya",n:"Аня",c:"var(--anya)",sub:"неділя",at:[3,1],start:"n0",nodes:{
+  n0:{m:[["me","Мені дзвонила Ліза. Там кричали."],["them","Ок."],["them","Я зараз зайнята."]],
+      ch:[["Ти нормально?","n1"],["Добре, пізніше.","n2"]]},
+  n1:{m:[["them","Нормально."],["them","Не пиши про це більше."]],ch:[]},
+  n2:{m:[["them","Так."]],ch:[]}}},
+{id:"olya",n:"Оля",c:"var(--olya)",sub:"неділя",at:[3,1],start:"o0",nodes:{
+  o0:{m:[["me","Я під дверима."],["sys","Прочитано 15:42"]],ch:[["Постукати ще раз","o1"]]},
+  o1:{m:[["sys","Тиша. Відповіді немає."]],ch:[]}}},
+{id:"vlad",n:"Влад",c:"var(--other)",sub:"з дня 16",at:[16,0],start:"v0",nodes:{
+  v0:{m:[["sys","Вхідний дзвінок: Влад"],["them","Слухай. Флешка. Я це вигадав."],["them","Мені треба було, щоб дивилися не туди."],["them","Не питай куди. Просто не шукай."]],
+      ch:[["Тобто там нічого?","v1"],["Чому я маю тобі вірити?","v2"]]},
+  v1:{m:[["them","Я не знаю, що на ній. Я знаю, що вона там не потрібна."]],ch:[]},
+  v2:{m:[["them","Не маєш."],["sys","Дзвінок завершено"]],ch:[]}}}
+];
+const N=(m,ch)=>({m:m.map(x=>typeof x==="string"?["them",x]:x),ch:ch||[]});
+const flag=k=>store.get("sk-"+k,false);
+if(P.day>=20&&!flag("dec")){P={day:19,ph:3};visited.delete(20);if(cur.day>=20)cur={day:19,ph:3};save()}
+function setFlag(k){if(!flag(k)){store.set("sk-"+k,true);emit()}}
+const HINTS={"1:2":"Нова згадка: гітара, навушники, кімната Дані","3:1":"Нове досьє: Аня. Її відповідь здалася сухою","3:2":"Нова згадка: зачинені двері Олі","4:1":"Нова згадка: люди не пам’ятають розмов, які пам’ятає Даня","5:2":"Нова згадка: група учнів біля гаражів","6:1":"Нова згадка: три версії однієї історії","7:2":"Нова згадка: Влад озирається","8:1":"Нове досьє: Юра. Він питає про флешку","9:1":"Нова згадка: Аліса збирає факти про Даню","10:2":"Нова згадка: чужа рука, двері під’їзду","13:1":"Нове досьє: Стас. Нова згадка: малюнок у нотатнику","15:1":"Нова згадка: Саша, Лєра, Женя","17:1":"Нова згадка: обіцянка не віддавати флешку","18:2":"Нова згадка: стукіт у вікно другого поверху","19:0":"Нова згадка: голоси під вікнами","2:1":"Нова згадка: Влад, за яким нібито стежать","3:0":"Нова згадка: Ліза, невідомий номер","5:1":"Нова згадка: флешка з компроматом","7:1":"Нова згадка: покинуті будівлі","9:0":"Нотатки: у записах є розбіжність","11:0":"На столі з’явилася флешка","14:1":"Нова згадка: гітара Лізи","16:0":"Влад визнає: історія про флешку була брехнею","19:1":"Нова згадка: Софія"};
+THREADS.push(
+{id:"mama",n:"Мама",c:"var(--other)",sub:"сьогодні",at:[1,2],start:"m0",eps:[{at:[8,2],id:"m3"},{at:[15,1],id:"m5"}],nodes:{
+ m0:N(["Борщ у холодильнику. Я на зміні до ночі.","Не сиди до ранку за комп’ютером."],[["Ок.","m1"],["Знову на зміні?","m2"]]),
+ m1:N(["Гарного вечора."]),m2:N(["Ти знаєш. Не починай."]),
+ m3:N(["Ти останнім часом якийсь змучений.","Може, відпочинеш хоч день?"],[["Нормально все.","m4"]]),m4:N(["Ну дивись. Я поруч телефоном.",["sys","Прочитано"]]),
+ m5:N(["Зайшла вночі, ти спав у навушниках.","Їж нормально, будь ласка."])}},
+{id:"vika",n:"Віка",c:"var(--other)",sub:"переказує",at:[5,1],start:"w0",eps:[{at:[14,1],id:"w3"}],nodes:{
+ w0:N(["ти чув?? про Влада і якусь флешку??","там така драма, я в шоці"],[["Звідки ти знаєш?","w1"],["Не пиши мені про це.","w2"]]),
+ w1:N(["ну... Серьога сказав, а йому хтось. усі знають"]),w2:N(["ой, добре. але ти ж потім розкажеш?"]),
+ w3:N(["Ліза грала в коридорі, ти чув? Я записала на телефон",["sys","Запису Даня не отримав."]])}},
+{id:"yura",n:"Юра",c:"var(--other)",sub:"тиск",at:[8,1],start:"y0",eps:[{at:[17,1],id:"y3"}],nodes:{
+ y0:N(["Німеров. Є розмова. Про флешку."],[["Я не маю ніякої флешки.","y1"],["Не пиши мені.","y2"]]),
+ y1:N(["Побачимо."]),y2:N(["Це не прохання."]),y3:N(["Востаннє. Віддай або поясни."])}},
+{id:"stas",n:"Стас",c:"var(--other)",sub:"малюнок",at:[13,1],start:"s0",nodes:{
+ s0:N([["sys","Фото без підпису: сторінка нотатника. Очі й сходи."]],[["Що це?","s1"],["Не відповідати","s2"]]),
+ s1:N(["Не знаю. Просто намалювалося."]),s2:N([["sys","Стас більше не писав."]])}}
+);
+const MORE={
+roma:{eps:[{at:[5,2],id:"r4"},{at:[8,2],id:"r7"},{at:[11,1],id:"r10"},{at:[13,1],br:"anya",id:"r13"},{at:[14,2],br:"olya",id:"r14"},{at:[16,2],id:"r15"}],nodes:{
+ r4:N(["ти бачив тих біля гаражів? Серьога з кимось про тебе щось казав"],[["Не вигадуй.","r5"],["Що саме?","r6"]]),
+ r5:N(["я не вигадую. просто слухай уважніше"]),r6:N(["не розчув. але дивились вони точно в твій бік"]),
+ r7:N(["в магазин йдемо? Оля теж буде"],[["Йдемо.","r8"],["Втомився.","r9"]]),
+ r8:N(["норм. я квас візьму"]),r9:N(["ти хоч спав? виглядаєш як після зміни"]),
+ r10:N([["sys","Пропущені від Роми: 11"],"ти де взагалі?","шість днів, Даня. шість"],[["Я сам розберусь.","r11"],["Потім поясню.","r12"]]),
+ r11:N(["ну да. як завжди"]),r12:N(["я чекатиму. тільки без «потім через тиждень»"]),
+ r13:N(["можна поговорити без неї? просто вдвох"],[["Вона мені допомагає.","r13a"],["Не зараз.","r13b"]]),
+ r13a:N(["допомагає чи тримає? я не кажу, що вона погана"]),r13b:N(["добре. але я не відчепився"]),
+ r14:N(["Оля тебе в халепу втягне. я серйозно"],[["Вона хоч не дивиться на мене як на хворого.","r14a"],["Не лізь.","r14b"]]),
+ r14a:N(["я так не дивлюсь. я боюсь"]),r14b:N(["ок. але я поруч, якщо шо"]),
+ r15:N(["Влад дзвонив? Аліса питала мене про нього","я нічого не знаю, чесно"])}},
+alisa:{eps:[{at:[7,1],id:"a4"},{at:[9,1],id:"a7"},{at:[13,1],id:"a10"},{at:[19,1],id:"a12"}],nodes:{
+ a4:N(["Ти бачив Влада сьогодні?","Він мені не відповідає з учорашнього вечора"],[["Бачив здалеку. Він озирався.","a5"],["Не бачив.","a6"]]),
+ a5:N(["Озирався. Дякую. Це схоже на нього зараз."]),a6:N(["Добре. Якщо побачиш, не лякай його питаннями."]),
+ a7:N(["Питання. Що ти робив дев’ятого ввечері? Мені потрібен час, не пояснення"],[["Не пам’ятаю точно.","a8"],["Чому ти питаєш?","a9"]]),
+ a8:N(["Це теж відповідь. Запишу як «не пам’ятає»."]),a9:N(["Бо чути різне. Я збираю те, що можна перевірити."]),
+ a10:N(["Я не вірю, що флешка з’явилася просто так","Але й не стверджую, що знаю, звідки вона"],[["Ти багато чого не стверджуєш.","a11"]]),a11:N(["Так простіше не помилятися."]),
+ a12:N(["Історія Влада не пояснює всього.","Є ще Софія. Більше не скажу, бо не маю доказів."],[["Яка Софія?","a13"]]),
+ a13:N(["Та, що малює й мовчить, коли питають про Влада.",["sys","Аліса не пояснила далі."]])}},
+anya:{eps:[{at:[6,2],id:"n3"},{at:[9,2],id:"n6"},{at:[12,2],br:"anya",id:"n9"}],nodes:{
+ n3:N(["Ти сьогодні майже не їв.","Я помітила."],[["Ти стежиш за мною?","n4"],["Дякую.","n5"]]),n4:N(["Ні. Я просто уважна."]),n5:N(["Ок."]),
+ n6:N([["me","Ти пам’ятаєш, що я писав удень?"],"Пам’ятаю. Хочеш, перешлю?"],[["Перешли.","n7"],["Ні, я сам.","n8"]]),
+ n7:N(["Ось. Тільки в тебе було трохи інакше.",["sys","Різниця невелика. Даня не може її пояснити."]]),n8:N(["Добре."]),
+ n9:N(["Не віддавай нікому флешку. Обіцяєш?"],[["Обіцяю.","n10"],["Подумаю.","n11"]]),n10:N(["Дякую. Мені спокійніше."]),n11:N(["Добре. Але думай швидко."])}},
+olya:{eps:[{at:[6,2],id:"o2"},{at:[8,2],id:"o4"},{at:[12,1],br:"olya",id:"o6"},{at:[17,1],br:"olya",id:"o8"}],nodes:{
+ o2:N(["ти де? ми з Ромою на трубах","приходь, а то помру з нудьги"],[["Іду.","o3"],["Пізніше.","o3b"]]),o3:N(["давай. з тебе енергетик"]),o3b:N(["ну як хочеш. не зникай"]),
+ o4:N(["вибач, що не відчинила тоді","довго пояснювати"],[["Усе нормально.","o5"],["Це було дивно.","o5b"]]),o5:N(["не нормально. але дякую"]),o5b:N(["знаю. не питай поки"]),
+ o6:N(["не панікуй. флешка це просто флешка"],[["Вона ж чомусь у мене.","o7"],["Тобі легко казати.","o7b"]]),o7:N(["чомусь. от і дізнаємось чому. разом"]),o7b:N(["не легко. але панікою нічого не змінимо"]),
+ o8:N(["Юра більше не чіпатиме. я з ним поговорила","по-своєму"],[["Не треба було.","o9"],["Дякую.","o9b"]]),o9:N(["треба. не сперечайся"]),o9b:N(["не дякуй. просто тримайся"])}},
+liza:{eps:[{at:[14,1],id:"l3"}],nodes:{l3:N([["sys","Невідомий номер. Повідомлення без тексту."],["sys","Даня не знає, чи це Ліза."]],[["Написати: «Ліза?»","l4"]]),l4:N([["sys","Не доставлено."]])}},
+vlad:{eps:[{at:[19,0],id:"v3"}],nodes:{v3:N(["Не відкривай. Я не знаю, що там.",["sys","Повідомлення видалено."]])}}
+};
+Object.keys(MORE).forEach(k=>{const t=THREADS.find(x=>x.id===k);t.eps=MORE[k].eps;Object.assign(t.nodes,MORE[k].nodes)});
+
+const ADD={
+mama:[{at:[3,3],id:"m6",t:["Ти ще не спиш? Світло під дверима.","Лягай, будь ласка."]},{at:[11,3],id:"m7",t:["Дзвонила тобі кілька разів.","Це ти телефон вимкнув?"]}],
+roma:[{at:[4,2],id:"r16",t:["вибач, що не брав слухавку. телефон сів","шо там було? розкажеш?"],c:[["Потім.","r16a"],["Ліза дзвонила.","r16b"]],n:{r16a:["ок. потім так потім"],r16b:["яка Ліза? ти впевнений, що то вона?",["sys","Даня не відповів."]]}}],
+olya:[{at:[4,1],id:"o10",t:["ти вчора приходив? мама казала, хтось дзвонив у двері"],c:[["Це був я.","o11"],["Не пам’ятаю.","o11b"]],n:{o11:["не злись. я була не в настрої"],o11b:["ну ок. забий"]}}],
+vika:[{at:[7,1],id:"w4",t:["слухай, Влад взагалі зник з чатів?","мені сказали, його бачили біля старої будівлі"]}],
+yura:[{at:[12,1],id:"y4",t:["Ти мене почув?","Не змушуй шукати іншу розмову."]}],
+alisa:[{at:[3,2],id:"a14",t:["Мені Влад написав одне слово: «стежать».","Більше нічого. Просто для довідки."]},{at:[16,2],id:"a15",t:["Влад тобі дзвонив?","Він мені тепер зовсім не відповідає."]}],
+anya:[{at:[4,2],id:"n12",t:["Ти нормально дійшов?","Просто питаю."]},{at:[8,3],id:"n13",t:["Вже пізно. Ти не спиш?"],c:[["Не сплю.","n14"],["Іду спати.","n15"]],n:{n14:["Я теж. Не пиши довго."],n15:["Добраніч."]}}],
+stas:[{at:[18,3],id:"s3",t:[["sys","Фото без підпису: сторінка нотатника. Тепер лише сходи."]]}],
+liza:[{at:[18,3],id:"l5",t:[["sys","Невідомий номер. Пропущений дзвінок 0:03."],["sys","Даня не передзвонив."]]}]
+};
+Object.keys(ADD).forEach(k=>{const t=THREADS.find(x=>x.id===k);t.eps=t.eps||[];ADD[k].forEach(e=>{t.eps.push({at:e.at,id:e.id});t.nodes[e.id]=N(e.t,(e.c||[]));Object.keys(e.n||{}).forEach(i=>t.nodes[i]=N(e.n[i]))});t.eps.sort((a,b)=>a.at[0]*4+a.at[1]-b.at[0]*4-b.at[1])});
+THREADS.push({id:"sery",n:"Серьога",c:"var(--other)",sub:"чутки",at:[6,1],start:"z0",eps:[],nodes:{z0:N(["Німеров, ти флешку бачив?","Хтось казав, що вона у когось з десятих"],[["Не бачив.","z1"],["Хто казав?","z2"]]),z1:N(["ну і добре. я так, чисто спитав"]),z2:N(["та всі. не пам’ятаю хто"])}},
+{id:"sasha",n:"Саша",c:"var(--other)",sub:"розмова",at:[15,1],start:"x0",eps:[],nodes:{x0:N(["Слухай, Лєра каже, ти щось знаєш.","Можемо просто поговорити."],[["Нічого я не знаю.","x1"],["Про що саме?","x2"]]),x1:N(["Це теж інформація, якщо подумати."]),x2:N(["Ну от і поговоримо."])}});
+const ANS=store.get("sk-ans",{}),POS=store.get("sk-pos",{});
+function mark(tid,ent){if(!ent||ANS[tid+":"+ent])return;ANS[tid+":"+ent]=1;store.set("sk-ans",ANS);emit()}
+function pendingChat(d,ph){const r=[];THREADS.forEach(t=>{[[t.at,"start"]].concat((t.eps||[]).filter(e=>(!e.br||e.br===branch)).map(e=>[e.at,e.id])).forEach(a=>{if(a[0][0]===d&&a[0][1]===ph&&!ANS[t.id+":"+a[1]])r.push(t)})});return r}
+const epOk=e=>reach(e.at[0],e.at[1])&&(!e.br||e.br===branch);
+const verT=t=>1+(t.eps||[]).filter(epOk).length;
+
+/* ---------- гілки: окремий прогрес, чати, нотатки ---------- */
+const BKEYS=["visited","p","cur","ans","msn","seen","seend","own","pos","lastchat","dec","open"].map(k=>"sk-"+k);
+const getPR=()=>store.get("sk-prof",null)||{cur:branch||null,s:{}};
+function snap(){const o={};BKEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)o[k]=v});return o}
+function putSnap(o){BKEYS.forEach(k=>{try{if(o&&o[k]!=null)localStorage.setItem(k,o[k]);else localStorage.removeItem(k)}catch(e){}})}
+function synthTrunk(){const o={};o["sk-visited"]=JSON.stringify([1,2,3,4,5,6,7,8,9,10,11]);o["sk-p"]=JSON.stringify({day:11,ph:2});o["sk-cur"]=JSON.stringify({day:11,ph:2});return o}
+function branchDone(k){if(k===branch)return !!flag("open");const sn=getPR().s[k];return !!(sn&&sn["sk-open"]==="true")}
+const anyDone=()=>["anya","olya","alone"].some(branchDone);
+function reloadState(b){
+  Object.keys(open).forEach(closeApp);
+  branch=b;visited=new Set(store.get("sk-visited",[1]));
+  P=store.get("sk-p",null)||{day:Math.max(...visited),ph:0};
+  if(!branch&&P.day>11){P.day=11;P.ph=0}
+  visited=new Set([...visited].filter(d=>d<=P.day));visited.add(1);
+  cur=store.get("sk-cur",null)||{day:P.day,ph:P.ph};if(!reach(cur.day,cur.ph))cur={day:P.day,ph:P.ph};
+  seenT=store.get("sk-seen",{});seenD=store.get("sk-seend",{});
+  Object.keys(ANS).forEach(k=>delete ANS[k]);Object.assign(ANS,store.get("sk-ans",{}));
+  Object.keys(POS).forEach(k=>delete POS[k]);Object.assign(POS,store.get("sk-pos",{}));
+  save();applyAccent();sky&&sky.rebuild();setSkyPhase(cur.ph);emit();
+}
+function switchBranch(t,viaPhone){
+  const to=t==="trunk"?null:t;if(to===branch&&!viaPhone)return;
+  save();const pr=getPR();pr.s[pr.cur||"trunk"]=snap();
+  const had=to&&pr.s[to];
+  putSnap(to?(pr.s[to]||pr.s.trunk||synthTrunk()):(pr.s.trunk||synthTrunk()));
+  pr.cur=to;store.set("sk-prof",pr);
+  if(had||!to){reloadState(to);toast(to?"Гілка «"+BNAME[to]+"»: прогрес відновлено, день "+P.day:"День 11. Оберіть опору наново.")}
+  else{reloadState(null);setBranch(to)}
+  setTimeout(()=>openApp("cal",{day:cur.day,ph:cur.ph}),60);
+}
+function branchBar(){
+  if(!anyDone())return null;
+  const pr=getPR(),box=el("div","brsw"),row=el("div","chips");
+  box.innerHTML='<small class="dim mono">Гілки. У кожної свій прогрес, чати й нотатки</small>';
+  [["alone","Самотність"],["anya","Аня"],["olya","Оля"]].forEach(a=>{
+    const k=a[0],sn=pr.s[k],pp=k===branch?P:(sn&&JSON.parse(sn["sk-p"]||"null"));
+    const bt=el("button","chip"+(k===branch?" on":""));bt.type="button";
+    bt.textContent=a[1]+(branchDone(k)?" ✓":(pp?" · день "+pp.day:" · з дня 11"));
+    bt.onclick=()=>switchBranch(k);row.appendChild(bt);
+  });
+  const r=el("button","chip","↩ День 11");r.type="button";r.onclick=()=>switchBranch("trunk");row.appendChild(r);
+  box.appendChild(row);return box;
+}
+APPS.msn={title:"Месенджер",short:"Чати",w:800,h:560,build(b,rec,o){
+  const root=el("div","msn");root.dataset.v="list";
+  const list=el("div","msn-list"),th=el("div","thread");
+  th.innerHTML='<p class="dim pad">Виберіть розмову.</p>';
+  root.append(list,th);b.appendChild(root);
+  const saved=store.get("sk-msn",{}),state={};
+  THREADS.forEach(t=>{const v=saved[t.id];state[t.id]={log:v?[...v.log]:[],node:v?v.node:null,ent:v?v.ent:null,busy:false,tm:0}});
+  let cur=null;
+  rec.closers.push(()=>THREADS.forEach(t=>clearTimeout(state[t.id].tm)));
+  const live=t=>reach(t.at[0],t.at[1]);
+  function persist(){const r={};THREADS.forEach(t=>{const s=state[t.id];if(s.node)r[t.id]={log:s.log,node:s.node,ent:s.ent}});store.set("sk-msn",r)}
+  const WDN=["понеділок","вівторок","середа","четвер","пʼятниця","субота","неділя"];
+  const lastAt=t=>Math.max(t.at[0]*4+t.at[1],...(t.eps||[]).filter(epOk).map(e=>e.at[0]*4+e.at[1]));
+  const seenTxt=t=>{const l=lastAt(t);return "Востаннє в мережі: "+WDN[(3+(l>>2))%7]+", "+PH[l&3].toLowerCase()};
+  const rows=new Map();let shell=null,pt=0;
+  const lastTxt=t=>{const l=state[t.id].log;for(let i=l.length-1;i>=0;i--){if(l[i][0]!=="sys")return(l[i][0]==="me"?"Ти: ":"")+l[i][1]}return t.sub};
+  function renderList(){
+    const av=THREADS.filter(live);
+    if(!list.firstChild)list.innerHTML='<div class="ml-h"><b>Чати</b><span></span></div><div class="ml-b"></div>';
+    const hd=list.firstChild,bd=list.lastChild;
+    if(!av.length){bd.innerHTML='<p class="dim pad">Поки тихо. Нові повідомлення з’являться, коли історія дійде до них.</p>';rows.clear();hd.lastChild.textContent="";return}
+    if(bd.firstChild&&bd.firstChild.tagName==="P")bd.innerHTML="";
+    const inf=av.map(t=>({t,nw:seenT[t.id]!==verT(t),lt:Math.max(t.at[0]*4+t.at[1],...(t.eps||[]).filter(epOk).map(e=>e.at[0]*4+e.at[1]))}));
+    inf.sort((x,y)=>(y.nw-x.nw)||(y.lt-x.lt));
+    const nn=inf.filter(x=>x.nw).length;
+    hd.lastChild.textContent=nn?nn+" нових":av.length+" розмов";hd.lastChild.className=nn?"nw":"";
+    inf.forEach((x,i)=>{
+      const t=x.t;let c=rows.get(t.id);
+      if(!c){c=el("button","contact",'<i class="av"></i><div class="ct"><div class="r1"><b></b><time></time></div><div class="r2"><small></small><u></u></div></div>');
+        c.type="button";c.style.setProperty("--c",t.c);c.querySelector(".av").textContent=t.n[0];c.querySelector("b").textContent=t.n;c.onclick=()=>show(t.id);rows.set(t.id,c)}
+      c.classList.toggle("on",cur===t.id);c.classList.toggle("nw",x.nw);
+      c.querySelector("time").textContent="День "+(x.lt>>2);
+      c.querySelector("small").textContent=x.nw&&!state[t.id].log.length?"нове повідомлення":lastTxt(t);
+      c.querySelector("u").textContent=x.nw?"1":"";
+      if(bd.children[i]!==c)bd.insertBefore(c,bd.children[i]||null);
+    });
+  }
+  function show(id){
+    const t=THREADS.find(x=>x.id===id),s=state[id];
+    cur=id;root.dataset.v="thread";store.set("sk-lastchat",id);
+    if(seenT[id]!==verT(t)){seenT[id]=verT(t);store.set("sk-seen",seenT);emit()}
+    renderList();
+    if(!s.node&&!s.busy)play(t,t.nodes[t.start].m,t.start,"start");else{draw(t,s.busy);nextEp(t)}
+    const ps=POS[id];if(ps&&ps.n===s.log.length)requestAnimationFrame(()=>{if(shell&&shell.t===t)shell.ms.scrollTop=ps.y});
+  }
+  function nextEp(t){
+    const s=state[t.id];if(s.busy||cur!==t.id||!s.node)return;
+    const e=(t.eps||[]).find(e=>epOk(e)&&!s.log.some(m=>m[2]===e.id));
+    if(!e)return;
+    s.log.push(["sys","День "+e.at[0]+", "+PH[e.at[1]].toLowerCase(),e.id]);
+    seenT[t.id]=verT(t);store.set("sk-seen",seenT);
+    play(t,t.nodes[e.id].m,e.id,e.id);
+  }
+  function play(t,msgs,next,ent){
+    const s=state[t.id];s.busy=true;let i=0;if(ent)s.ent=ent;
+    (function go(){
+      if(i>=msgs.length){s.node=next;s.busy=false;if(!(t.nodes[next]||{ch:[]}).ch.length)mark(t.id,s.ent);persist();if(cur===t.id)draw(t);renderList();nextEp(t);return}
+      const m=msgs[i],them=m[0]==="them"&&!RM;
+      if(cur===t.id)draw(t,them);
+      s.tm=setTimeout(()=>{s.log.push(m);i++;if(cur===t.id)draw(t);s.tm=setTimeout(go,RM?0:300)},them?700:(RM?0:300));
+    })();
+  }
+  function build(t){
+    th.innerHTML="";th.style.setProperty("--c",t.c);
+    const hd=el("div","th-head"),back=el("button","back","← Чати");back.type="button";
+    back.onclick=()=>{root.dataset.v="list";cur=null;renderList()};
+    const av=el("i","av"),nm=el("div","nm","<b></b><small></small>");av.textContent=t.n[0];nm.firstChild.textContent=t.n;
+    hd.append(back,av,nm);
+    const ms=el("div","th-msgs"),ch=el("div","th-choices");th.append(hd,ms,ch);
+    ms.onscroll=()=>{clearTimeout(pt);pt=setTimeout(()=>{POS[t.id]={y:ms.scrollTop,n:state[t.id].log.length};store.set("sk-pos",POS)},500)};
+    shell={t,hd,st:nm.lastChild,ms,ch,n:0,typ:null,ck:null,fresh:false,prev:null};
+  }
+  function draw(t,typing){
+    const s=state[t.id];if(!shell||shell.t!==t)build(t);
+    const S=shell,ms=S.ms,near=S.n===0||ms.scrollHeight-ms.scrollTop-ms.clientHeight<140;
+    if(S.typ){S.typ.remove();S.typ=null}
+    for(;S.n<s.log.length;S.n++){
+      const m=s.log[S.n],b=el("div","bub "+m[0]+(S.fresh?"":" old"));b.textContent=m[1];
+      if(S.prev===m[0]&&m[0]!=="sys")b.classList.add("gp");S.prev=m[0];ms.appendChild(b);
+    }
+    if(typing){S.typ=el("div","bub typ"+(S.prev==="them"?" gp":""),"<i></i><i></i><i></i>");ms.appendChild(S.typ)}
+    S.st.textContent=typing?"пише…":seenTxt(t);S.hd.classList.toggle("ty",!!typing);
+    const nd=t.nodes[s.node]||{ch:[]},key=(!s.busy&&!typing?s.node:"")+"|"+s.log.length;
+    if(S.ck!==key){
+      S.ck=key;S.ch.innerHTML="";
+      if(!s.busy&&!typing)nd.ch.forEach(op=>{const bt=el("button","btn");bt.textContent=op[0];bt.type="button";
+        bt.onclick=()=>{if(s.busy)return;mark(t.id,s.ent);s.log.push(["me",op[0]]);play(t,t.nodes[op[1]].m,op[1])};S.ch.appendChild(bt)});
+    }
+    S.fresh=true;
+    if(near)requestAnimationFrame(()=>{ms.scrollTop=ms.scrollHeight});
+  }
+  onState(rec,()=>{renderList();const t=THREADS.find(x=>x.id===cur);if(t)nextEp(t)});
+  rec.api=q=>{if(q.who){const t=THREADS.find(x=>x.id===q.who);if(t&&live(t))show(t.id);else toast("Цієї розмови ще немає. Вона з’явиться пізніше в історії.")}};
+  renderList();
+  if(o.who)rec.api(o);
+}};
+
+/* ---------- notes ---------- */
+APPS.note={title:"Нотатки.txt",short:"Нотатки",w:560,h:560,build(b,rec){
+  const p=el("div","pad");b.appendChild(p);
+  let own=store.get("sk-own",[]),checked=new Set(),draft="";
+  const LV={ok:["Підтверджений факт","ok"],sub:["Суб’єктивне сприйняття","warn"],unk:["Невизначена подія","unk"]};
+  function draw(){
+    const keep=b.scrollTop;
+    p.innerHTML='<p class="dim mono" style="font-size:12px;margin-bottom:8px">Даня пише їх увечері. Вірити їм чи ні, він уже не знає. Натисніть «Звірити», щоб побачити, чим запис підтверджений.</p>';
+    let shownN=0;NOTEROWS.forEach((n,i)=>{
+      if(!doneDay(i+1))return;shownN++;const r=el("div","note fade");r.innerHTML="<time>"+esc(n[0])+"</time><p class=\"tx\">"+esc(n[1])+"</p>";
+      const ev=el("div","ev");
+      if(checked.has(i)){
+        ev.innerHTML='<span class="tag '+LV[n[2]][1]+'">'+LV[n[2]][0]+'</span><p>'+esc(n[3])+'</p>';
+      }else{
+        const bt=el("button","btn sm","Звірити");bt.type="button";
+        bt.onclick=()=>{checked.add(i);if(n[2]!=="ok")glitchWin("note");draw()};ev.appendChild(bt);
+      }
+      r.appendChild(ev);p.appendChild(r);
+    });
+    if(!shownN)p.appendChild(el("p","dim mono","Записів ще немає. Даня пише їх увечері після кожного дня."));
+    const gap=el("button","gap","[ проміжок: запису немає ]");gap.type="button";
+    gap.onclick=()=>{
+      gap.classList.remove("glitch");void gap.offsetWidth;gap.classList.add("glitch");
+      gap.textContent="[ файл збережено вночі. Наступний запис стоїть під іншою датою. Що було між ними, нічого не підтверджує ]";
+      glitchWin("note");
+    };
+    if(doneDay(9))p.appendChild(gap);
+    const r=el("div","note");r.innerHTML="<time>День 10</time><p>…мокрий асфальт. Навушники. Екран. Рука. Двері під’їзду. Флешка біля клавіатури.</p><div class=\"ev\"><span class=\"tag unk\">Невизначена подія</span><p>Запис не має тексту, лише образи. Як усе було, невідомо.</p></div>";
+    if(doneDay(10))p.appendChild(r);
+    own.forEach((t,i)=>{
+      const q=el("div","note"+(t.re?" re":""));q.innerHTML="<time>"+(t.re?"переосмислено":"дописано")+"</time><p class=\"tx\"></p>";$("p.tx",q).textContent=t.t;
+      if(!t.re){const bt=el("button","btn sm","Переосмислити");bt.type="button";bt.style.gridColumn="2";bt.style.justifySelf="start";
+        bt.onclick=()=>{own[i]={t:t.t+" … Хоча тепер мені здається, що все було трохи інакше.",re:1};store.set("sk-own",own);glitchWin("note");draw()};q.appendChild(bt)}
+      p.appendChild(q);
+    });
+    const ta=el("textarea");ta.id="note-in";ta.value=draft;ta.oninput=()=>{draft=ta.value};ta.placeholder="Дописати від себе. Що ти бачив, а що тобі розповіли?";
+    const bt=el("button","btn","Зберегти запис");bt.type="button";bt.style.marginTop="8px";
+    bt.onclick=()=>{const v=ta.value.trim();if(v){own.push({t:v});store.set("sk-own",own);draft="";draw()}};
+    p.append(ta,bt);b.scrollTop=keep;
+  }
+  draw();onState(rec,draw);
+}};
+/* ---------- story reader: 20 days ---------- */
+const SLV={ok:["Факт","ok"],sub:["Суб’єктивне","warn"],unk:["Невизначене","unk"]};
+function setSkyPhase(ph){document.body.dataset.ph=ph;sky&&sky.rebuild()}
+function typeInto(node,text,rec){
+  clearInterval(node._t);node._on=false;
+  const fin=()=>{clearInterval(node._t);node._on=false;node.classList.remove("typing");node.textContent=text};
+  node._fin=fin;node.onclick=fin;
+  if(RM){node.textContent=text;return}
+  let i=0;node.textContent="";node._on=true;node.classList.add("typing");
+  node._t=setInterval(()=>{i+=2;node.textContent=text.slice(0,i);if(i>=text.length)fin()},16);
+  rec.closers.push(()=>clearInterval(node._t));
+}
+const EV11={anya:"Аня лишається в Дані. Вони п’ють чай, а вона спостерігає за його станом.",olya:"Оля проводить із ним час на районі. Вони обговорюють ситуацію без сентиментів.",alone:"Даня сидить за комп’ютером, перевіряє флешку й без кінця переглядає повідомлення."};
+function announce(d,ph){
+  const first=d>1||ph>0,g={prog:[],chat:[],dos:[],note:[]};
+  ICONS.forEach(i=>{if(i[4][0]===d&&i[4][1]===ph&&first)g.prog.push(i[1])});
+  THREADS.forEach(t=>{if(t.at[0]===d&&t.at[1]===ph)g.chat.push(t.n);(t.eps||[]).forEach(e=>{if(e.at[0]===d&&e.at[1]===ph&&(!e.br||e.br===branch)&&!g.chat.includes(t.n))g.chat.push(t.n)})});
+  CH.forEach(x=>{const a=DOSAT[x.n];if(a&&a[0]===d&&a[1]===ph&&first)g.dos.push(x.n)});
+  Object.keys(FNAT).forEach(k=>{const a=FNAT[k];if(a[0]===d&&a[1]===ph&&!g.dos.includes(k))g.note.push(k)});
+  const o=[];
+  if(g.chat.length)o.push("Чати: "+g.chat.join(", "));
+  if(g.dos.length||g.note.length)o.push("Досьє: "+g.dos.concat(g.note.map(k=>k+" (запис)")).join(", "));
+  if(g.prog.length)o.push("Програма: "+g.prog.join(", "));
+  return o;
+}
+APPS.cal={title:"20 днів",short:"20 днів",w:700,h:600,build(b,rec,o){
+  let view=null,all=false,lastKey="",bstop=null;rec.closers.push(()=>bstop&&bstop());
+  function go(d,ph){
+    if(!reach(d,ph)){toast("Цей момент ще попереду. Історія відкривається по черзі.");return}
+    cur={day:d,ph};setSkyPhase(ph);save();emit();
+  }
+  function step(d,ph){
+    const fresh=!visited.has(d);
+    advance(d,ph);cur={day:d,ph};setSkyPhase(ph);save();emit();
+    const parts=announce(d,ph);
+    if(fresh&&isGlitch(d)){setTimeout(()=>glitchWin("cal"),150);parts.unshift("Збій сприйняття, довіра до пам’яті падає")}
+    if(HINTS[d+":"+ph])parts.push(HINTS[d+":"+ph]);
+    if(parts.length)setTimeout(()=>toast(parts.slice(0,4).join("\n")),500);
+  }
+  function draw(){
+    const keep=b.scrollTop;
+    if(P.day<12)all=false;
+    const vb=all?(view||branch||"anya"):branch;
+    b.innerHTML="";
+    const p=el("div","pad");
+    {const bb=branchBar();if(bb)p.appendChild(bb)}
+    const top=el("div","chips");
+    if(P.day>11){
+      
+      if(all)["anya","olya","alone"].forEach(k=>{const c=el("button","chip"+(vb===k?" on":""),BNAME[k]);c.type="button";c.onclick=()=>{view=k;draw()};top.appendChild(c)});
+    }
+    p.appendChild(top);
+    const info=el("p","dim mono");info.style.cssText="font-size:12px;margin-top:10px";
+    info.textContent="Прочитано "+((P.day-1)*4+P.ph+1)+" з 80"+(vb?" · гілка: "+BNAME[vb]+(all?" (перегляд)":""):"");
+    p.appendChild(info);
+    const grid=el("div","days"),sel=cur.day;
+    for(let d=1;d<=20;d++){
+      const it=storyDay(d,vb),ok=!!it&&d<=P.day;
+      const bt=el("button","day"+(sel===d?" on":"")+(d<P.day?" done":"")+(ok?" vis":" lock")+(ok&&it.g?" glit":"")+(d===11?" pick":""),String(d));
+      if(d===11)bt.style.setProperty("--c","var(--white)");
+      bt.type="button";bt.setAttribute("aria-label","День "+d+(ok?"":", закрито"));
+      bt.onclick=()=>{if(!ok){toast(d===12&&!branch?"Спершу вибір у день 11: кому відповісти.":"День "+d+" відкриється, коли закінчиться день "+(d-1)+".");return}go(d,0)};
+      grid.appendChild(bt);
+    }
+    p.appendChild(grid);requestAnimationFrame(()=>{const o=grid.querySelector(".day.on");if(o)grid.scrollLeft=o.offsetLeft-grid.clientWidth/2+o.offsetWidth/2});
+    const it=storyDay(sel,vb),dv=el("div","dayview");
+    if(it){
+      const ph=Math.min(cur.ph,3);
+      dv.innerHTML='<div class="tags"><span class="tag">День '+sel+'</span>'+(sel>11?'<span class="tag" style="color:'+BCOL[vb]+'">'+BNAME[vb]+'</span>':"")+'<span class="tag '+SLV[it.s][1]+'">'+SLV[it.s][0]+'</span>'+(it.g?'<span class="tag warn">збій сприйняття</span>':"")+'</div><h2>'+esc(it.t)+"</h2>";
+      const tabs=el("div","ph-tabs");
+      PH.forEach((n,i)=>{const c=el("button","chip"+(i===ph?" on":""),n);c.type="button";c.disabled=!reach(sel,i);c.onclick=()=>go(sel,i);tabs.appendChild(c)});
+      dv.appendChild(tabs);dv.dataset.ph=ph;
+      {const bn=el("div","banner");const bc=el("canvas");bn.appendChild(bc);
+       bn.insertAdjacentHTML("beforeend",'<span class="bn-t">'+WDAY[(3+sel)%7]+" · "+CLK[ph]+"</span>");
+       dv.insertBefore(bn,dv.firstChild);bstop&&bstop();
+       bstop=rainOn(bc,200+sel*7,.1,null,()=>branch?TINTS[branch]:null,()=>ph)}
+      const tx=el("p","ph-txt");dv.appendChild(tx);
+      const am=el("p","atmo",esc(ATM[ph][(sel+ph)%4]));
+      const txt=(sel===11&&branch&&ph===2)?EV11[branch]:it[["r","d","v","n"][ph]];
+      const key=sel+":"+ph+":"+vb;
+      if(key!==lastKey){typeInto(tx,txt,rec);lastKey=key}else tx.textContent=txt;
+      dv.appendChild(am);const front=sel===P.day&&ph===P.ph,tgt=ph<3?[sel,ph+1]:[sel+1,0];
+      const blocked=ph===3&&sel===11&&!branch,fdb=(ph===3&&sel===19&&!flag("dec"))||(sel===20&&ph===1&&!flag("open")),last=sel===20&&ph===3;
+      const pc=(front&&!blocked&&!fdb&&!last)?pendingChat(sel,ph):[];
+      const nav=el("div","nav2");
+      const prev=el("button","btn sm prv","← Назад");prev.type="button";prev.disabled=sel===1&&ph===0;
+      prev.onclick=()=>{if(ph>0)go(sel,ph-1);else if(sel>1)go(sel-1,3)};
+      const nx=el("button","btn pri nxt",blocked?"Кому відповісти? Телефон":pc.length?"Спершу відповісти в чаті: "+pc[0].n:fdb?(sel===19?"Спершу розшифруйте флешку":"Відкрийте файл на флешці"):last?"Що лишилося без відповіді":ph<3?"Далі: "+PH[ph+1]:"Далі: день "+(sel+1));nx.type="button";
+      nx.onclick=()=>{
+        if(tx._on){tx._fin();return}
+        if(blocked)return openApp("ph");
+        if(fdb){toast("Флешка ще зашифрована. Поки контейнер закритий, історія далі не йде.");return openApp("fd")}
+        if(last)return openApp("unk");
+        if(pc.length){return openApp("msn",{who:pc[0].id})}
+        if(front)step(tgt[0],tgt[1]);else go(tgt[0],tgt[1]);
+      };
+      nav.append(prev,nx);dv.appendChild(nav);
+      if(sel===11&&!branch&&ph>=1&&!blocked){const o2=el("button","btn","Відкрити Телефон");o2.type="button";o2.onclick=()=>openApp("ph");dv.appendChild(o2)}
+      if(branch&&((sel===19&&ph>=2)||(sel===20&&ph>=1))){const o2=el("button","btn","Відкрити флешку");o2.type="button";o2.onclick=()=>openApp("fd");dv.appendChild(o2)}
+    }else dv.innerHTML='<h2>Закрито</h2><p class="dim">Цей день ще попереду.</p>';
+    p.appendChild(dv);b.appendChild(p);b.scrollTop=keep;
+  }
+  const kd=e=>{const r=open.cal;if(!r||!r.w.dataset.on||e.target.closest("textarea,input"))return;
+    if(e.key==="ArrowRight"){const x=$(".nxt",b);x&&x.click()}else if(e.key==="ArrowLeft"){const x=$(".prv",b);x&&!x.disabled&&x.click()}};
+  addEventListener("keydown",kd);rec.closers.push(()=>removeEventListener("keydown",kd));
+  rec.api=q=>{if(q.day){const ok=reach(q.day,q.ph||0);go(ok?q.day:P.day,ok?(q.ph||0):P.ph)}};
+  draw();onState(rec,draw);
+  if(o.day)rec.api(o);else setSkyPhase(cur.ph);
+}};
+
+/* ---------- phone, day 11 ---------- */
+const REPLY={
+  anya:"Аня відповідає одразу. Вона тривожиться й просить нікому не віддавати флешку. Каже, що зараз прийде. Її турбота здається щирою, але надто швидко переходить до вимог.",
+  olya:"Оля розповідає про хаос у ліцеї й сміється з паніки навколо флешки. Пропонує зустрітися біля гаражів. Чекати, поки хтось вирішить за них, вона не збирається.",
+  alone:"Даня скидає дзвінки й вмикає авіарежим. Він вирішує розібратися сам і переконує себе, що кожен із друзів може його використати."
+};
+APPS.ph={title:"Телефон",short:"Телефон",w:380,h:620,build(b,rec){
+  const p=el("div","ph");b.appendChild(p);
+  let tm=[],shown=null;
+  rec.closers.push(()=>tm.forEach(clearTimeout));
+  function put(items,gap){
+    tm.forEach(clearTimeout);tm=[];
+    items.forEach((n,i)=>{
+      if(RM||!gap){p.appendChild(n);return}
+      tm.push(setTimeout(()=>{n.classList.add("fade");p.appendChild(n);b.scrollTop=b.scrollHeight},i*gap));
+    });
+  }
+  function draw(){
+    const key=branch||"-",anim=shown!==key;shown=key;
+    p.innerHTML="";
+    const it=[el("div","ph-time","14:02"),el("div","ph-date","День 11 · Заставинськ")];
+    [["Аня","var(--anya)",14],["Оля","var(--olya)",9],["Рома","var(--roma)",11]].forEach(m=>{
+      const r=el("div","miss");r.style.setProperty("--c",m[1]);
+      r.innerHTML='<div><b>'+m[0]+'</b><small>Пропущені дзвінки, повідомлення без відповіді</small></div><span class="n">'+m[2]+'</span>';it.push(r);
+    });
+    if(!branch){
+      it.push(el("p","dim","Шість днів ніби випали. У роті сухо, голова важка. Хто саме зараз буде поруч, вирішує Даня."));
+      [["Передзвонити Ані","anya"],["Передзвонити Олі","olya"],["Скинути все й увімкнути авіарежим","alone"]].forEach(a=>{
+        const bt=el("button","btn",a[0]);bt.type="button";bt.onclick=()=>{setBranch(a[1]);openApp("cal",{day:11,ph:2})};it.push(bt);
+      });
+      it.push(el("p","dim mono",'<span style="font-size:11px">Рома теж дзвонив. Його слухавку Даня не бере.</span>'));
+    }else{
+      const r=el("div","reply");r.style.borderLeft="3px solid "+BCOL[branch];
+      r.innerHTML="<p>"+esc(REPLY[branch])+"</p>";
+      const a=el("button","btn pri",P.day>11?"Повернутися до історії":"Далі: вечір дня 11");a.type="button";a.onclick=()=>openApp("cal",{day:cur.day,ph:cur.ph});
+      r.appendChild(a);
+      if(P.day===11){const z=el("button","btn sm","Передумати: назад до дзвінків");z.type="button";z.onclick=()=>setBranch(null);r.appendChild(z)}
+      it.push(r);
+    }
+    put(it,anim?650:0);
+  }
+  draw();onState(rec,draw);
+}};
+/* ---------- flash drive ---------- */
+const FIN={
+ anya:{n:"АНЯ",s:["Даня читає назву як підтвердження: Аня знала більше, ніж казала.","Її погляд здається йому порожнім, скляним. Це бачить Даня, і він не знає, чи бачить правильно. Що саме вона знала й коли дізналася, невідомо.","Піти від неї можна, але тоді він лишиться сам зі своїми провалами пам’яті. Тому він приймає її версію. Не тому, що вона доведена, а тому, що не хоче лишатися наодинці. Уночі вони сидять на даху, місто мокре після дощу."],figs:[{x:.44,y:.82,hair:"#eba7c6"},{x:.52,y:.82}]},
+ olya:{n:"ОЛЯ",s:["Даня розуміє, що Оля могла знати про порожню флешку або хоча б здогадуватися, що історія навколо неї не має сенсу.","Вона не зізнається в усьому. Можливо, вона розгублена так само, як він. Небезпека могла бути поруч весь цей час, і це лякає.","Він її не відштовхує. Оля не обіцяє безпеки й не вдає, що знає відповіді. На даху вони мовчать і дивляться на місто."],figs:[{x:.36,y:.82,hair:"#e38a2e"},{x:.62,y:.82}]},
+ alone:{n:"ДАНЯ",s:["Даня вирішує, що це доказ: саме він був джерелом усього жаху.","Він перечитує записи й уже не відрізняє ті, що зробив одразу, від тих, що переосмислив пізніше. Назва файла нічого не доводить. Небезпека від цього не зникає.","Звуки квартири зливаються в один гул. Послідовність розсипається. Білий спалах."],figs:null}
+};
+APPS.fd={title:"FLASH (E:)",short:"Флешка",w:600,h:540,build(b,rec){
+  const p=el("div","pad");b.appendChild(p);
+  let stage=flag("dec")?2:0,step=0,pct=0,timer=null,stopRoof=null;
+  const ready=()=>P.day>19||(P.day===19&&P.ph>=2);
+  rec.closers.push(()=>{clearInterval(timer);stopRoof&&stopRoof()});
+  const LOG=["читаю заголовок контейнера","перевіряю ключ","розшифровую блоки","контейнер відкрито"];
+  function draw(){
+    stopRoof&&stopRoof();stopRoof=null;
+    p.innerHTML='<div class="fd-path">E:\\</div>';
+    if(stage===0){
+      p.appendChild(el("div","fd-row","<span>container.vc</span><span class=\"dim\">зашифровано</span>"));
+      p.appendChild(el("p","dim","Звичайна флешка. Нічого надприродного, тільки контейнер, який не відкривається."));
+      const bt=el("button","btn","Розшифрувати");bt.type="button";bt.style.marginTop="12px";
+      if(!branch){
+        bt.disabled=true;p.appendChild(bt);
+        p.appendChild(el("p","dim mono",'<span style="font-size:12px">Даня ще не наважився. Спершу день 11.</span>'));
+        const o=el("button","btn","Відкрити Телефон");o.type="button";o.style.marginTop="8px";o.onclick=()=>openApp("ph");p.appendChild(o);
+      }else if(!ready()){
+        bt.disabled=true;p.appendChild(bt);
+        p.appendChild(el("p","dim mono",'<span style="font-size:12px">Даня ще не наважився. Це станеться наприкінці дня 19.</span>'));
+      }else{
+        bt.onclick=()=>{
+          stage=1;pct=0;draw();
+          timer=setInterval(()=>{
+            pct+=RM?25:2;
+            const bar=$(".bar i",p),lg=$(".log",p);
+            if(!bar){clearInterval(timer);return}
+            bar.style.width=Math.min(100,pct)+"%";
+            lg.innerHTML=LOG.filter((_,i)=>pct>=i*30+(i?0:1)).map(t=>"> "+t).join("<br>");
+            if(pct>=100){clearInterval(timer);setTimeout(()=>{stage=2;setFlag("dec");draw()},400)}
+          },110);
+        };
+        p.appendChild(bt);
+        
+      }
+    }else if(stage===1){
+      p.appendChild(el("p","","Розшифрування…"));
+      p.appendChild(el("div","bar","<i></i>"));
+      p.appendChild(el("div","log"));
+    }else if(stage===2){
+      p.appendChild(el("p","dim","Контейнер відкрито. Усередині один файл."));
+      const r=el("div","fd-row");r.style.marginTop="10px";
+      r.innerHTML="<span>"+FIN[branch].n+"</span>";
+      const o=el("button","btn","Відкрити");o.type="button";o.onclick=()=>{stage=3;step=0;setFlag("open");draw()};
+      r.appendChild(o);p.appendChild(r);
+    }else{
+      const f=FIN[branch];
+      const nm=el("div","fname",f.n);nm.style.setProperty("--c",BCOL[branch]);p.appendChild(nm);
+      if(step>=2&&f.figs){
+        const rf=el("div","roof fade");const cv=el("canvas");rf.appendChild(cv);p.appendChild(rf);
+        stopRoof=rainOn(cv,314,.05,f.figs.map(x=>x),()=>TINTS[branch]);
+      }
+      const rd=el("div","read");
+      for(let i=0;i<=step;i++)rd.appendChild(el("p","fade",esc(f.s[i])));
+      if(step<2){
+        const n=el("button","btn","Далі");n.type="button";n.style.alignSelf="flex-start";
+        n.onclick=()=>{step++;if(step===2&&branch==="alone")whiteFlash();draw()};rd.appendChild(n);
+      }else{
+        rd.appendChild(el("p","dim mono",'<span style="font-size:12px">Назва нічого не доводить. Вона тільки запускає інтерпретацію.</span>'));
+        const n=el("button","btn","Закрити файл");n.type="button";n.style.alignSelf="flex-start";
+        n.onclick=()=>{stage=2;draw()};rd.appendChild(n);
+        const u=el("button","btn","Що лишилося без відповіді");u.type="button";u.style.alignSelf="flex-start";
+        u.onclick=()=>openApp("unk");rd.appendChild(u);
+      }
+      p.appendChild(rd);
+    }
+  }
+  draw();
+  let lb=branch,lr=ready();
+  onState(rec,()=>{if(lb!==branch){lb=branch;clearInterval(timer);stage=0;draw()}else if(lr!==ready()){lr=ready();if(stage===0)draw()}});
+}};
+/* ---------- balcony ---------- */
+const HOT=[
+{x:.2,y:.3,t:"Вікна навпроти",k:"ok",x2:["Багато вікон ще темні. У кількох розсуваються штори, хтось ставить чайник, хтось шукає ключі. Люди починають день і не підозрюють, що за ними хтось дивиться.","Вдень вікна схожі на дзеркала сірого неба. Інколи за склом майне постать, одразу зникає. Нічого вартого уваги, і все одно Даня дивиться.","Вечір вмикає світло майже всюди. Вечеря, телевізори, чужі кухні. Це тепло з чужого життя, яке Дані ніколи не стане своїм.","Світить тільки кілька вікон. Хтось не спить, як і він. Жодного зв’язку між ними немає, але думати про це легше, ніж не думати."]},
+{x:.84,y:.28,t:"Звуки під’їзду",k:"unk",x2:["Ліфт гуде, труби рипають, хтось тягне візок сходами. Це звичайний ранок будинку, і Даня майже вірить у це.","З-під ґанку чути гомін і чийсь сміх. Вдень будинок гучний, і в ньому легко загубити будь-який звук.","Кроки на сходах, брязкіт ключів, двері. Даня ловить себе на тому, що рахує кроки.","Вночі ліфт гуде гучніше, ніж треба. Кроки то є, то ні. Чи були вони взагалі, Даня не знає."]},
+{x:.42,y:.55,t:"Двері під’їзду",k:"ok",x2:["Двері хлопають, виходить сусід у мокрій куртці. Парасолька, кашель, хтось поспішає на роботу.","Хтось виніс сміття, хтось повернувся з магазину з пакетом. Двері відчиняються й зачиняються, як у будь-який день.","Домофон пищить частіше. Люди повертаються додому, і Даня знову не може не рахувати їх.","Двері довго стоять зачиненими. Рух буває рідко, і кожен раз здається, що це неспроста. А може, це просто сусід."]},
+{x:.1,y:.65,t:"Сигарета",k:"ok",x2:["Перша сигарета разом із кавою 3 в 1. Дощ шумить, а тут тихо, і саме тому тут думається спокійніше.","Курити посеред дня майже ліньки, але Даня курить. Попіл падає в мокру темряву бляшанки.","Вогник розгоряється, дим розтягується під дощем. Тут Даня думає найспокійніше, хоча відповідей не знаходить.","У темній кімнаті тільки цей вогник і рухається. Даня довго не гасить його, наче це допоможе не думати."]},
+{x:.62,y:.78,t:"Калюжі",k:"sub",x2:["Калюжі тримають сіре небо. Уздовж бордюру тягнеться тонка смужка світла, і вона здається важливою.","Асфальт блищить без сонця. У воді відбиваються вікна, і Даня на мить плутає, де верх, а де низ.","У калюжах двоє розмитих ліхтарів. Вони тремтять від кожної краплі, і Даня дивиться, поки не втомлюються очі.","Чорна вода і жовті плями світла. Відбитки здаються чіткішими, ніж самі ліхтарі. Даня не певен, які з них справжні."]},
+{x:.76,y:.5,t:"Гаражі й покинута будівля",k:"sub",x2:["Удалині рядами стоять гаражі, за ними темна коробка покинутої будівлі. На ранковому світлі вона виглядає просто старою.","Біля гаражів хтось стоїть невеликою групою й щось обговорює. Даня не чує слів. Це може бути про що завгодно.","Вечорами навколо гаражів сидять старші учні. Покинута будівля за ними чорніє, і Даня згадує, що про неї говорили.","Ніч стирає межі між гаражами й будівлею. Там нічого не горить. Даня все одно відчуває, що за ним звідти дивляться."]}
+];
+const BPH=["Ранок","День","Вечір","Ніч"];
+APPS.bal={title:"Балкон",short:"Балкон",w:660,h:520,build(b,rec){
+  const sc=el("div","scene"),sv=el("div","sv");
+  const cv=el("canvas");sv.appendChild(cv);sv.appendChild(el("div","rail"));
+  const cap=el("div","cap","<p>Даня стоїть на балконі й дивиться вниз. Торкніться кіл. Час доби змінює все.</p>");
+  const cnt=el("div","cnt","");
+  const tl=el("div","tl");
+  let ph=Math.max(0,Math.min(3,P.ph)),stop=null,seen=new Set(),lastI=-1;
+  function mk(){stop&&stop();stop=rainOn(cv,314,[.15,.05,.2,.38][ph],null,()=>branch?TINTS[branch]:null,()=>ph)}
+  function count(){cnt.textContent="Оглянуто "+seen.size+" з "+HOT.length}
+  BPH.forEach((n,k)=>{const c=el("button","chip"+(k===ph?" on":""),n);c.type="button";c.onclick=()=>{ph=k;seen=new Set();count();tl.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));sv.querySelectorAll(".hot").forEach(x=>x.classList.remove("on","done"));cap.innerHTML="<p>"+["Ранок. Сіро, мокро, тихо.","День. Двір живий, ніби нічого не сталося.","Вечір. Ліхтарі, вікна, дощ густішає.","Ніч. Двір порожній, звуки гучніші, ніж треба."][k]+"</p>";mk()};tl.appendChild(c)});
+  sc.appendChild(sv);sv.appendChild(tl);sv.appendChild(cnt);count();
+  HOT.forEach((h,i)=>{
+    const bt=el("button","hot");bt.type="button";bt.setAttribute("aria-label",h.t);
+    bt.style.left=h.x*100+"%";bt.style.top=h.y*100+"%";
+    bt.onclick=()=>{
+      sv.querySelectorAll(".hot").forEach(x=>x.classList.remove("on"));bt.classList.add("on","done");
+      seen.add(i);count();
+      const L=SLV[h.k];
+      cap.innerHTML='<div class="tags"><span class="tag '+L[1]+'">'+L[0]+'</span><span class="tag">'+BPH[ph]+'</span></div><h3>'+esc(h.t)+"</h3><p>"+esc(h.x2[ph]+(P.day>=14&&ph>=2?" Тепер він помічає це частіше, ніж хотів би.":""))+"</p>"+(seen.size===HOT.length?'<p class="dim mono" style="font-size:12px">Усе оглянуто. Спробуйте інший час доби.</p>':"");
+    };
+    sv.appendChild(bt);
+  });
+  sc.appendChild(cap);b.appendChild(sc);
+  mk();rec.closers.push(()=>stop&&stop());
+}};
+
+/* ---------- rumour chain ---------- */
+const HOPS=[
+ ["Невідомо","Влад десь щось побачив і дуже злякався.","Початок. Ні від кого конкретного."],
+ ["Серьога","У Влада є якась флешка. Він її комусь віддав.","Додалася флешка."],
+ ["Віка","Існує флешка з компроматом, і в ній хтось із нашого ліцею.","Додалися компромат і наше коло."],
+ ["Настя","На флешці записи про всіх. Вона вже в когось із десятого класу.","Тепер там «усі», і названо клас."],
+ ["Ангеліна","Десятикласник тримає флешку й знає все про всіх. Ховається.","З’явилася людина, яка «знає все»."],
+ ["Юра","Німеров тримає флешку. Нехай віддає.","Названо Даню."]
+];
+APPS.rum={title:"Чутки",short:"Чутки",w:560,h:540,build(b,rec){
+  const p=el("div","pad rum");b.appendChild(p);
+  let n=1,mode="chain",own=null;
+  function lc(s){return s.charAt(0).toLowerCase()+s.slice(1)}
+  function mutate(s){
+    const t=s.trim().replace(/[.!?]+$/,"");
+    return [["Ви","Я сказав: "+t+".","Початок. Ваша фраза."],
+      ["Серьога","Кажуть, що "+lc(t)+". І комусь це вже віддали.","Додалася передача «комусь»."],
+      ["Віка","Усі в курсі: "+lc(t)+". Там справжня драма, повірте.","Додалася драма й «усі»."],
+      ["Настя","Це серйозно. "+t+", і це про когось із нашого класу.","Названо коло."],
+      ["Ангеліна","Той, хто знає, що "+lc(t)+", ховається. Усе записано.","З’явилася людина, яка «знає все»."],
+      ["Юра","Німеров знає, що "+lc(t)+". Нехай каже.","Названо Даню."]];
+  }
+  function draw(){
+    p.innerHTML="";
+    const tabs=el("div","chips");
+    [["chain","Ланцюжок про флешку"],["own","Своя фраза"]].forEach(a=>{const c=el("button","chip"+(mode===a[0]?" on":""),a[1]);c.type="button";c.onclick=()=>{mode=a[0];n=1;draw()};tabs.appendChild(c)});
+    p.appendChild(tabs);
+    let arr=HOPS;
+    if(mode==="own"){
+      if(!own){
+        p.appendChild(el("p","dim","Введіть будь-яку коротку фразу. Кожен у ланцюжку перекаже її чесно, як запам’ятав."));
+        const inp=el("input");inp.type="text";inp.id="rum-in";inp.placeholder="Наприклад: Оля купила нову гітару";
+        const go=el("button","btn","Запустити в коридор");go.type="button";
+        go.onclick=()=>{const v=inp.value.trim();if(v){own=mutate(v);n=1;draw()}};
+        inp.addEventListener("keydown",e=>{if(e.key==="Enter")go.click()});
+        p.append(inp,go);return;
+      }
+      arr=own;
+    }else p.appendChild(el("p","dim","Одна фраза переходить від людини до людини. Кожен переказує її чесно, як запам’ятав."));
+    for(let i=0;i<n;i++){
+      const h=el("div","hop");h.style.setProperty("--c",i===arr.length-1?"var(--roma)":"var(--other)");
+      h.innerHTML="<small>"+esc(arr[i][0])+(i?" · передача "+i:"")+"</small><p>"+esc(arr[i][1])+"</p>"+(i?"<em>"+esc(arr[i][2])+"</em>":"");
+      p.appendChild(h);
+    }
+    if(n<arr.length){
+      const bt=el("button","btn","Передати далі");bt.type="button";bt.onclick=()=>{n++;draw();b.scrollTop=b.scrollHeight};p.appendChild(bt);
+    }else{
+      p.appendChild(el("p","",mode==="chain"?"Тепер ця версія дійшла до Дані. Він навіть не певен, що флешка існує.":"Така фраза дійшла до Юри. Ніхто не збрехав навмисно."));
+      const bt=el("button","btn","Почати спочатку");bt.type="button";bt.onclick=()=>{n=1;own=null;draw();b.scrollTop=0};p.appendChild(bt);
+    }
+  }
+  draw();
+}};
+
+/* ---------- fact check ---------- */
+const SQ=[
+ ["Даня отримав дзвінок від Лізи.","ok","Це справді сталося в межах світу новели."],
+ ["Влад навмисно поширював неправдиву інформацію про флешку.","ok","Підтверджено: Влад сам у цьому зізнається."],
+ ["Двоє учнів дивляться в бік Дані. Він вирішує, що вони стежать за ним.","sub","Погляд був. Висновок належить Дані й може бути хибним."],
+ ["Унизу хтось фотографує Даню.","sub","Даня бачить жест і робить висновок, а людину не розгледів."],
+ ["Уночі хтось стукає у вікно на другому поверсі.","unk","Даня не встиг побачити джерело. Можливо, хтось зовні, можливо, він помилився з напрямком."],
+ ["Аня відповідає на розповідь про дзвінок надто сухо.","unk","Роздратована, налякана чи просто не хоче говорити, невідомо."],
+ ["Звідки взялася флешка.","unk","Її походження лишається невідомим назавжди."],
+ ["Софія пов’язана з небезпечною діяльністю.","ok","Гравець має це зрозуміти, хоча деталей не отримає."],
+ ["Рома каже, що дзвінок міг бути випадковим.","sub","Це його пояснення. Воно просте, але нічого не доводить."],
+ ["Між двома записами в нотатках є діра.","ok","Проміжок у записах підтверджений. Що було всередині, ні."],
+ ["Люди під вікнами прийшли саме через флешку.","unk","Даня не бачить усіх, і не всі можуть бути пов’язані з нею."],
+ ["Даня переживає реальні проблеми з пам’яттю та сприйняттям.","ok","Це гравець має зрозуміти. Але це не робить хибним усе, що він бачив."]
+];
+const SL={ok:["Підтверджений факт","ok","var(--ok)"],sub:["Суб’єктивне сприйняття","warn","var(--warn)"],unk:["Невизначена подія","unk","var(--unk)"]};
+APPS.chk={title:"Перевірка фактів",short:"Факти",w:560,h:540,build(b,rec){
+  const p=el("div","pad");b.appendChild(p);
+  let i=0,score=0;
+  function draw(){
+    p.innerHTML="";
+    if(i>=SQ.length){
+      p.innerHTML='<h2>'+score+" з "+SQ.length+'</h2><p style="margin-top:10px">'+(score>=SQ.length-2?"Ви тримаєте межі добре. Дані це дається гірше.":score>=SQ.length/2?"Половина інтуїції працює. Решту забирає шум.":"Це нормально. Навіть Даня не знає, де проходять межі.")+' У сценарії ці позначки внутрішні. Гравець їх не бачить і мусить розрізняти сам.</p>';
+      const bt=el("button","btn","Ще раз");bt.type="button";bt.style.marginTop="12px";bt.onclick=()=>{i=0;score=0;draw()};p.appendChild(bt);return;
+    }
+    const q=SQ[i];
+    p.appendChild(el("p","dim mono",'<span style="font-size:12px">Подія '+(i+1)+" з "+SQ.length+". Що це за подія?</span>"));
+    const qq=el("div","sort-q fade",esc(q[0]));qq.style.marginTop="8px";p.appendChild(qq);
+    const bs=el("div","sort-btns");
+    Object.keys(SL).forEach(k=>{
+      const bt=el("button","btn",SL[k][0]);bt.type="button";
+      bt.onclick=()=>{
+        const right=k===q[1];if(right)score++;
+        bs.querySelectorAll("button").forEach(x=>x.disabled=true);
+        const fb=el("div","fb fade");fb.style.setProperty("--c",SL[q[1]][2]);
+        fb.innerHTML='<div class="tags"><span class="tag '+SL[q[1]][1]+'">'+(right?"Так: ":"Ні: ")+SL[q[1]][0]+"</span></div><p style=\"margin-top:6px\">"+esc(q[2])+"</p>";
+        const nx=el("button","btn",i<SQ.length-1?"Далі":"Підсумок");nx.type="button";nx.style.marginTop="10px";
+        nx.onclick=()=>{i++;draw()};fb.appendChild(nx);p.appendChild(fb);
+      };
+      bs.appendChild(bt);
+    });
+    p.appendChild(bs);
+  }
+  draw();
+}};
+
+/* ---------- relations graph (floating, draggable) ---------- */
+const REL=[
+ ["Аня","anya","var(--anya)","Довіра, турбота, залежність, контроль і можливість свідомо прийняти брехню."],
+ ["Оля","olya","var(--olya)","Дружба, прямота, спільне протистояння тиску. Ризик прийняти небезпеку за свободу."],
+ ["Рома","roma","var(--roma)","Давня дружба, спроби повернутися до нормальності. Конфлікт між простим поясненням і складним внутрішнім досвідом."],
+ ["Аліса","alisa","var(--other)","Взаємна підозра, збір інформації, незавершене розслідування."],
+ ["Влад","vlad","var(--other)","Брехня про флешку і справжня небезпека за її межами."],
+ ["Софія","sofia","var(--other)","Контакт із реальним джерелом небезпеки, яке не розкриває всього сюжету."],
+ ["Ліза","liza","var(--other)","Тривожний дзвінок, відсутність пояснення, музика як нагадування про невирішене."],
+ ["Стас","stas","var(--other)","Зустрічі, які Даня може сприймати як знаки, хоча їхній сенс лишається відкритим."],
+ ["Віка","vika","var(--other)","Чутки, перебільшення, зміна історії в процесі переказу."],
+ ["Юра","yura","var(--other)","Прямий соціальний тиск навколо флешки."]
+];
+const RLINK=[["Аліса","Влад"],["Влад","Софія"],["Віка","Юра"],["Аня","Оля"]];
+const RPOS={};
+APPS.rel={title:"Карта зв’язків",short:"Зв’язки",w:640,h:620,build(b,rec,o){
+  const root=el("div","rel");b.appendChild(root);
+  const NS="http://www.w3.org/2000/svg",mk=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  const svg=mk("svg",{role:"img","aria-label":"Карта зв’язків Дані"});svg.style.touchAction="none";
+  const info=el("div","info");root.append(svg,info);
+  let sel=null,W=400,H=300,raf=0,T=0;
+  const hub=RPOS.hub||(RPOS.hub={x:0,y:0,vx:0,vy:0,fx:0,ph:0,init:0});
+  const N=REL.map((r,i)=>RPOS[r[0]]||(RPOS[r[0]]={x:0,y:0,vx:0,vy:0,fx:0,ph:Math.random()*6.28,init:0}));
+  const lines=[],xl=[],gs=[];
+  REL.forEach(()=>{const l=mk("line",{class:"ln"});svg.appendChild(l);lines.push(l)});
+  RLINK.forEach(()=>{const l=mk("line",{class:"ln"});l.style.strokeDasharray="3 6";l.style.opacity=".5";svg.appendChild(l);xl.push(l)});
+  REL.forEach((r,i)=>{
+    const g=mk("g",{class:"nd",tabindex:0,role:"button","aria-label":r[0]});g.style.setProperty("--c",r[2]);
+    const halo=mk("circle",{r:30,class:"halo"});halo.style.cssText="fill:var(--c);stroke:none;opacity:.12";
+    const c=mk("circle",{r:27}),t=mk("text",{y:4});g.append(halo,c,t);svg.appendChild(g);gs.push({g,halo,c,t});
+    g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(i)}};
+    bindDrag(g,N[i],()=>pick(i));
+  });
+  const hg=mk("g",{style:"cursor:grab"}),hc=mk("circle",{r:34,fill:"var(--panel2)",stroke:"var(--white)","stroke-width":2}),hh=mk("circle",{r:40,fill:"var(--white)",opacity:.08}),ht=mk("text",{y:6,"text-anchor":"middle"});
+  ht.textContent="ДАНЯ";ht.style.cssText="fill:var(--white);font:600 18px var(--f-display);letter-spacing:.06em;pointer-events:none";
+  hg.append(hh,hc,ht);svg.appendChild(hg);bindDrag(hg,hub,null);
+  function bindDrag(g,n,click){
+    g.addEventListener("pointerdown",e=>{
+      e.preventDefault();g.setPointerCapture(e.pointerId);
+      const r=svg.getBoundingClientRect(),sx=e.clientX,sy=e.clientY;let moved=0,lx=n.x,ly=n.y;
+      const px=ev=>[ev.clientX-r.left,ev.clientY-r.top];
+      n.fx=1;g.style.cursor="grabbing";
+      const mv=ev=>{const p=px(ev);moved=Math.max(moved,Math.hypot(ev.clientX-sx,ev.clientY-sy));
+        lx=n.x;ly=n.y;n.x=Math.max(34,Math.min(W-34,p[0]));n.y=Math.max(34,Math.min(H-34,p[1]));n.vx=(n.x-lx)*.6;n.vy=(n.y-ly)*.6};
+      const up=()=>{n.fx=0;g.style.cursor="";g.removeEventListener("pointermove",mv);g.removeEventListener("pointerup",up);g.removeEventListener("pointercancel",up);if(moved<5&&click)click()};
+      g.addEventListener("pointermove",mv);g.addEventListener("pointerup",up);g.addEventListener("pointercancel",up);
+    });
+  }
+  function labels(){REL.forEach((r,i)=>{gs[i].t.textContent=relOpen(r[0])?r[0]:"?";gs[i].g.style.opacity=relOpen(r[0])?1:.55})}
+  function pick(i){sel=i;showInfo()}
+  function showInfo(){
+    info.innerHTML="";
+    if(sel==null){info.innerHTML='<p class="dim">Даня в центрі всіх зв’язків. Тягніть вузли, вони пливуть і пульсують. Торкніться людини, щоб побачити, що їх пов’язує.</p>';return}
+    if(!relOpen(REL[sel][0])){info.innerHTML='<p class="dim">Цей зв’язок ще не відкрився в історії. Він з’явиться, коли сюжет дійде до цієї людини.</p>';return}
+    const r=REL[sel];info.innerHTML='<h3 style="color:'+r[2]+'">Даня — '+esc(r[0])+'</h3><p style="margin-top:6px">'+esc(r[3])+'</p>';
+    const ch=CH.find(c=>c.n===r[0]),row=el("div","chips");row.style.marginTop="8px";
+    if(ch){const bt=el("button","btn sm","Відкрити досьє");bt.type="button";bt.onclick=()=>openApp("dos",{who:r[0]});row.appendChild(bt)}
+    if(["anya","olya","roma","alisa","vlad","liza"].includes(r[1])){const bm=el("button","btn sm","Чат");bm.type="button";bm.onclick=()=>openApp("msn",{who:r[1]});row.appendChild(bm)}
+    info.appendChild(row);
+  }
+  function layout(){
+    const r=svg.getBoundingClientRect();W=Math.max(200,r.width);H=Math.max(160,r.height);
+    if(!hub.init){hub.init=1;hub.x=W/2;hub.y=H/2}
+    N.forEach((n,i)=>{if(!n.init){n.init=1;const a=-Math.PI/2+i*2*Math.PI/REL.length,R=Math.min(W,H)*.34;n.x=W/2+R*Math.cos(a);n.y=H/2+R*Math.sin(a)}});
+  }
+  function tick(){
+    if(!svg.isConnected){return}
+    T+=1;const L=Math.min(W,H)*.33;
+    const all=N.concat([hub]);
+    // repulsion
+    for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){
+      const a=all[i],c=all[j];let dx=c.x-a.x,dy=c.y-a.y,d=Math.hypot(dx,dy)||1;
+      if(d<110){const f=(110-d)*.012;dx/=d;dy/=d;if(!a.fx){a.vx-=dx*f;a.vy-=dy*f}if(!c.fx){c.vx+=dx*f;c.vy+=dy*f}}
+    }
+    // spring to hub
+    N.forEach((n,i)=>{
+      const dx=n.x-hub.x,dy=n.y-hub.y,d=Math.hypot(dx,dy)||1,f=(d-L)*.006;
+      if(!n.fx){n.vx-=dx/d*f;n.vy-=dy/d*f}
+      if(!hub.fx){hub.vx+=dx/d*f*.25;hub.vy+=dy/d*f*.25}
+    });
+    // secondary links
+    RLINK.forEach(p=>{const a=N[REL.findIndex(r=>r[0]===p[0])],c=N[REL.findIndex(r=>r[0]===p[1])];
+      const dx=c.x-a.x,dy=c.y-a.y,d=Math.hypot(dx,dy)||1,f=(d-L*.75)*.002;
+      if(!a.fx){a.vx+=dx/d*f;a.vy+=dy/d*f}if(!c.fx){c.vx-=dx/d*f;c.vy-=dy/d*f}});
+    if(!hub.fx){hub.vx+=(W/2-hub.x)*.0015;hub.vy+=(H/2-hub.y)*.0015}
+    all.forEach((n,i)=>{
+      if(!n.fx){
+        if(!RM){n.vx+=Math.sin(T*.011+n.ph)*.012;n.vy+=Math.cos(T*.009+n.ph*1.7)*.012}
+        n.vx*=.92;n.vy*=.92;n.x+=n.vx;n.y+=n.vy;
+        if(n.x<34){n.x=34;n.vx*=-.4}if(n.x>W-34){n.x=W-34;n.vx*=-.4}
+        if(n.y<34){n.y=34;n.vy*=-.4}if(n.y>H-34){n.y=H-34;n.vy*=-.4}
+      }
+    });
+    // draw
+    REL.forEach((r,i)=>{
+      const n=N[i],l=lines[i],strong=branch&&r[1]===branch,dim=branch==="alone"&&["anya","olya"].includes(r[1]);
+      l.setAttribute("x1",hub.x);l.setAttribute("y1",hub.y);l.setAttribute("x2",n.x);l.setAttribute("y2",n.y);
+      l.style.stroke=(strong||sel===i)?r[2]:"";l.style.strokeWidth=strong?4:sel===i?3:"";l.style.strokeDasharray=dim?"4 6":"";
+      const open=relOpen(r[0]),pu=RM?0:Math.sin(T*.04+n.ph);
+      l.style.opacity=open?1:.3;
+      gs[i].g.setAttribute("transform","translate("+n.x.toFixed(1)+","+n.y.toFixed(1)+")");
+      gs[i].c.setAttribute("r",(27+(open?pu*1.8:0)+(sel===i?3:0)).toFixed(1));
+      gs[i].halo.setAttribute("r",(34+pu*5+(strong?5:0)).toFixed(1));
+      gs[i].halo.style.opacity=open?(.1+(pu+1)*.06+(strong?.1:0)):.03;
+    });
+    RLINK.forEach((p,k)=>{const ia=REL.findIndex(r=>r[0]===p[0]),ic=REL.findIndex(r=>r[0]===p[1]),a=N[ia],c=N[ic],l=xl[k];
+      l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",c.x);l.setAttribute("y2",c.y);l.style.display=(relOpen(p[0])&&relOpen(p[1]))?"":"none"});
+    const hp=RM?0:Math.sin(T*.03);
+    hg.setAttribute("transform","translate("+hub.x.toFixed(1)+","+hub.y.toFixed(1)+")");
+    hc.setAttribute("r",(34+hp*1.5).toFixed(1));hh.setAttribute("r",(42+hp*5).toFixed(1));
+    raf=requestAnimationFrame(tick);
+  }
+  const ro=new ResizeObserver(layout);ro.observe(svg);
+  rec.closers.push(()=>{cancelAnimationFrame(raf);ro.disconnect()});
+  rec.api=q=>{if(q.who){const i=REL.findIndex(r=>r[0]===q.who);if(i>=0)pick(i)}};
+  layout();labels();showInfo();onState(rec,()=>{labels();showInfo()});
+  if(o.who)rec.api(o);
+  raf=requestAnimationFrame(tick);
+}};
+
+/* ---------- guitar ---------- */
+const STR=[["E",82.41,6],["A",110,5],["D",146.83,4],["G",196,3],["B",246.94,2],["e",329.63,1]];
+const CHORDS={"Em":[0,2,2,0,0,0],"Am":[-1,0,2,2,1,0],"C":[-1,3,2,0,1,0],"D":[-1,-1,0,2,3,2],"G":[3,2,0,0,0,3],"Dm":[-1,-1,0,2,3,1],"E":[0,2,2,1,0,0],"A":[-1,0,2,2,2,0]};
+const RHY={"Вниз":["D",0,"D",0,"D",0,"D",0],"Вниз-вгору":["D",0,"D","U",0,"U","D","U"],"Перебір":["R",3,4,5,4,3,4,2]};
+const NF=n=>{const m=/^([A-G])(#?)(\d)$/.exec(n),B={C:-9,D:-7,E:-5,F:-4,G:-2,A:0,B:2};return 440*Math.pow(2,(B[m[1]]+(m[2]?1:0)+(+m[3]-4)*12)/12)};
+const SONGS=[
+ {t:"Мотив із далекого двору",d:"Мелодія, яку Даня чує десь здалеку й не певен, чия вона.",bpm:80,ch:["Am","C","Em","D"],toast:1,n:[["A3",1],["C4",1],["E4",1.5],["D4",.5],["C4",1],["A3",1],["G3",2],["A3",1],["C4",1],["E4",1],["G4",1],["E4",2],["D4",.5],["C4",.5],["A3",3]]},
+ {t:"Дощ по вікну",d:"Повільна, ніби краплі по підвіконню.",bpm:68,ch:["Am","G","C","E"],n:[["E4",1],["G4",1],["A4",2],["G4",1],["E4",1],["D4",2],["E4",1],["G4",1],["B4",1],["A4",1],["G4",3],["r",1]]},
+ {t:"Гаражі",d:"Дрібний ритм, шаркання кроків повз гаражі.",bpm:98,ch:["Em","Am","D","G"],n:[["E4",.5],["E4",.5],["G4",1],["E4",.5],["D4",.5],["B3",1],["E4",.5],["G4",.5],["A4",1],["G4",.5],["E4",.5],["D4",1],["B3",.5],["D4",.5],["E4",2]]},
+ {t:"Шум системника",d:"Монотонна колискова, під яку важко не заснути.",bpm:56,ch:["Em","Am","Em","Am"],n:[["E4",2],["D4",1],["C4",1],["D4",2],["A3",2],["E4",2],["G4",1],["E4",1],["D4",2],["E4",2]]},
+ {t:"Темна",d:"Те, що лишається, коли вимикають світло.",bpm:64,ch:["Dm","Am","E","Am"],n:[["D4",1],["F4",1],["A4",2],["G4",1],["F4",1],["E4",2],["D4",1],["E4",1],["F4",1],["D4",1],["A3",3],["r",1]]}
+];
+const PC=new Map();let GM=null;
+function gmaster(){const A=actx();if(GM&&GM.A===A)return GM.n;const g=A.createGain();g.gain.value=.85;const lp=A.createBiquadFilter();lp.type="lowpass";lp.frequency.value=4200;g.connect(lp);lp.connect(A.destination);GM={A,n:g};return g}
+function pbuf(A,f){const k=Math.round(f*10);let b=PC.get(k);if(b&&b.sampleRate===A.sampleRate)return b;
+  const sr=A.sampleRate,n=Math.floor(sr*2.2),p=Math.max(2,Math.round(sr/f));b=A.createBuffer(1,n,sr);const d=b.getChannelData(0);
+  for(let i=0;i<p;i++)d[i]=Math.random()*2-1;
+  for(let i=p;i<n;i++)d[i]=(d[i-p]+d[i-p+1])*.4985;
+  const fd=Math.floor(sr*.25);for(let i=0;i<fd;i++)d[n-1-i]*=i/fd;
+  PC.set(k,b);return b}
+function gnote(f,at,g,list){const A=actx(),s=A.createBufferSource();s.buffer=pbuf(A,f);const gn=A.createGain();gn.gain.value=g;s.connect(gn);gn.connect(gmaster());s.start(at);if(list){list.push(s);if(list.length>80)list.shift()}}
+APPS.gtr={title:"Гітара",short:"Гітара",w:540,h:620,build(b,rec){
+  const p=el("div","pad gt");b.appendChild(p);
+  let tab="ch",ch="Am",bpm=80,rh="Вниз-вгору",slots=["Am","C","Em","D"],playing=null,timer=0,tms=[],srcs=[];
+  const NMS=Object.keys(CHORDS);
+  const fr=(i,c)=>STR[i][1]*Math.pow(2,CHORDS[c][i]/12);
+  function flash(i,ms){tms.push(setTimeout(()=>{const s=$("#gs"+i,p);if(s){s.classList.remove("pl");void s.offsetWidth;s.classList.add("pl")}},ms))}
+  function mark(c,ms,k){tms.push(setTimeout(()=>{ch=c;const cu=$(".cur",p);if(cu)cu.textContent="Акорд: "+c;p.querySelectorAll(".cc").forEach(x=>x.classList.toggle("on",x.textContent===c));p.querySelectorAll(".sl").forEach((x,j)=>x.classList.toggle("on",j===k))},ms))}
+  function one(i,c,at,g){if(CHORDS[c][i]<0)return;gnote(fr(i,c),at,g||.34,srcs);flash(i,Math.max(0,(at-actx().currentTime)*1000))}
+  function strum(c,dir,at,g){(dir>=0?[0,1,2,3,4,5]:[5,4,3,2,1,0]).forEach((i,k)=>one(i,c,at+k*.022,g))}
+  const root=c=>CHORDS[c].findIndex(x=>x>=0);
+  function bar(c,t0,k){
+    const st=30/bpm;mark(c,Math.max(0,(t0-actx().currentTime)*1000),k);
+    RHY[rh].forEach((e,j)=>{if(e===0)return;const at=t0+j*st;
+      if(e==="D")strum(c,1,at,j%4===0?.36:.28);else if(e==="U")strum(c,-1,at,.2);
+      else one(e==="R"?root(c):e,c,at,.4)});
+  }
+  function stop(){clearInterval(timer);timer=0;tms.forEach(clearTimeout);tms=[];srcs.forEach(s=>{try{s.stop()}catch(e){}});srcs=[];if(playing){playing=null;draw()}}
+  function playProg(){
+    stop();playing="prog";const A=actx();let t=A.currentTime+.15,k=0;
+    const tick=()=>{while(t<A.currentTime+.3){bar(slots[k%4],t,k%4);k++;t+=30/bpm*8}};
+    tick();timer=setInterval(tick,60);draw();
+  }
+  function playSong(i){
+    stop();const S=SONGS[i];playing="song"+i;const A=actx(),beat=60/S.bpm;let t=A.currentTime+.15;const t0=t;
+    S.n.forEach(m=>{if(m[0]!=="r"){const f=NF(m[0]);gnote(f,t,.5,srcs);const j=STR.reduce((bi,s2,q)=>Math.abs(Math.log(f/s2[1]))<Math.abs(Math.log(f/STR[bi][1]))?q:bi,0);flash(j,(t-A.currentTime)*1000)}t+=m[1]*beat});
+    const total=t-t0;
+    if(S.ch)for(let q=0,x=t0;x<t0+total-.1;q++,x+=beat*4){const c=S.ch[q%S.ch.length];gnote(fr(root(c),c),x,.22,srcs);mark(c,(x-A.currentTime)*1000,-1)}
+    tms.push(setTimeout(()=>{if(playing==="song"+i){playing=null;draw()}},total*1000+700));
+    if(S.toast)toast("Даня не певен, чи правильно пов’язує цю мелодію з Лізою.");draw();
+  }
+  rec.closers.push(()=>{clearInterval(timer);tms.forEach(clearTimeout);srcs.forEach(s=>{try{s.stop()}catch(e){}})});
+  function tabs(){
+    const t=el("div","chips");[["ch","Акорди"],["sg","Пісні"]].forEach(x=>{const c=el("button","chip"+(tab===x[0]?" on":""),x[1]);c.type="button";c.onclick=()=>{if(tab!==x[0]){stop();tab=x[0];draw()}};t.appendChild(c)});return t}
+  function drawSongs(){
+    p.appendChild(el("p","dim","Заготовлені мелодії. Вони не пояснюють сюжет, але повертають до людей і місць, яких Даня не може знайти. Звучить гітара Дані."));
+    SONGS.forEach((S,i)=>{
+      const on=playing==="song"+i,card=el("div","hop");card.style.setProperty("--c",on?"var(--white)":"var(--other)");
+      card.innerHTML="<small>"+(on?"Грає":"Пісня "+(i+1)+" · "+S.bpm+" уд/хв")+"</small><p><b>"+esc(S.t)+"</b></p><em>"+esc(S.d)+"</em>";
+      const bt=el("button","btn"+(on?" pri":""),on?"Зупинити":"Грати");bt.type="button";bt.style.marginTop="8px";bt.onclick=()=>on?stop():playSong(i);card.appendChild(bt);p.appendChild(card);
+    });
+  }
+  function drawChords(){
+    p.appendChild(el("p","dim","Торкніться струни або клавіші 1–6. Свою прогресію зберіть із чотирьох акордів, торкання змінює акорд."));
+    const chips=el("div","chips");
+    NMS.forEach(k=>{const c=el("button","chip cc"+(k===ch?" on":""),k);c.type="button";c.onclick=()=>{ch=k;if(!playing)draw();else p.querySelectorAll(".cc").forEach(x=>x.classList.toggle("on",x.textContent===k))};chips.appendChild(c)});
+    p.appendChild(chips);
+    STR.forEach((s,i)=>{const bt=el("button","str","<span>"+s[0]+"</span>");bt.type="button";bt.id="gs"+i;bt.style.setProperty("--w",s[2]/2+.5);bt.setAttribute("aria-label","Струна "+s[0]);bt.onclick=()=>one(i,ch,actx().currentTime+.01,.45);p.appendChild(bt)});
+    p.appendChild(el("p","dim mono cur","Акорд: "+ch));
+    const row=el("div","chips");
+    const st=el("button","btn","Вниз");st.type="button";st.onclick=()=>strum(ch,1,actx().currentTime+.01,.34);
+    const up=el("button","btn","Вгору");up.type="button";up.onclick=()=>strum(ch,-1,actx().currentTime+.01,.3);
+    row.append(st,up);p.appendChild(row);
+    p.appendChild(el("p","dim mono",'<span style="font-size:12px">Ритм і своя прогресія</span>'));
+    const r2=el("div","chips");Object.keys(RHY).forEach(k=>{const c=el("button","chip"+(k===rh?" on":""),k);c.type="button";c.onclick=()=>{rh=k;if(!playing)draw();else r2.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.textContent===k))};r2.appendChild(c)});p.appendChild(r2);
+    const r3=el("div","chips");slots.forEach((k,j)=>{const c=el("button","chip sl",k);c.type="button";c.onclick=()=>{slots[j]=NMS[(NMS.indexOf(slots[j])+1)%NMS.length];c.textContent=slots[j]};r3.appendChild(c)});p.appendChild(r3);
+    const sl=el("label","dim mono",'<span style="font-size:12px">Темп: <b class="bp">'+bpm+'</b></span>');
+    const rg=el("input");rg.type="range";rg.min=50;rg.max=140;rg.value=bpm;rg.style.cssText="width:100%;margin-top:4px";rg.oninput=()=>{bpm=+rg.value;$(".bp",p).textContent=bpm};sl.appendChild(rg);p.appendChild(sl);
+    const pl=el("button","btn pri",playing==="prog"?"Зупинити":"Грати прогресію");pl.type="button";pl.style.marginTop="8px";pl.onclick=()=>playing==="prog"?stop():playProg();p.appendChild(pl);
+  }
+  function draw(){p.innerHTML="";p.appendChild(tabs());tab==="ch"?drawChords():drawSongs()}
+  const kd=e=>{if(!open.gtr||tab!=="ch"||e.target.closest("textarea,input"))return;const n=+e.key;if(n>=1&&n<=6&&open.gtr.w.dataset.on)one(n-1,ch,actx().currentTime+.01,.45)};
+  addEventListener("keydown",kd);rec.closers.push(()=>removeEventListener("keydown",kd));
+  draw();
+}};
+
+/* ---------- unresolved ---------- */
+const UNK=[
+ ["u","Хто й коли підкинув Дані флешку","Невідомо. Її походження лишається таким навіть після відкриття файла."],
+ ["u","Чи хтось навмисно стежив за Данею на початку","Фотографування Даня бачив тільки як жест. Підтвердження немає."],
+ ["u","Що сталося з Лізою після дзвінка","Її стан і доля лишаються невідомими."],
+ ["u","Скільки Аня знала про флешку і коли зрозуміла","Назва файла «АНЯ» не пояснює мотиву."],
+ ["u","Чи знала Оля, що флешка порожня","Вона могла знати або просто приймала хаос як частину життя."],
+ ["u","Наскільки точно Влад говорить правду після зізнання","Він визнає брехню, але не каже, від чого відволікав."],
+ ["u","Що саме встановила Аліса у своєму розслідуванні","Вона збирає картину, але не завершує пошук."],
+ ["u","Чи кожна дивна подія була реальною","Дещо реальне, дещо хибно сприйняте, дещо лишається невизначеним."],
+ ["k","Влад навмисно поширював брехню про флешку","Щоб відвернути увагу від іншої небезпеки."],
+ ["k","Софія безпосередньо пов’язана з цією небезпекою","І усвідомлює ризики."],
+ ["k","Даня має реальні проблеми з пам’яттю та сприйняттям","Але це не робить хибним усе, що він бачив."],
+ ["k","Чутки й соціальний тиск справді існують","Спортіки, нефори й нормісня підтримують їх по-різному."],
+ ["k","Аня, Оля й Рома по-різному намагаються бути поруч","Кожен несе свою міру допомоги й ризику."],
+ ["k","Жодна з трьох гілок не дає повного контролю над ситуацією","Фінали різняться тим, як Даня живе з невизначеністю."]
+];
+APPS.unk={title:"Без відповіді",short:"Невідоме",w:560,h:560,build(b,rec){
+  const p=el("div","pad");b.appendChild(p);
+  let f="all";
+  function draw(){
+    p.innerHTML="";
+    const chips=el("div","chips");
+    [["all","Усе"],["u","Невідомо"],["k","Відомо"]].forEach(a=>{const c=el("button","chip"+(f===a[0]?" on":""),a[1]);c.type="button";c.onclick=()=>{f=a[0];draw()};chips.appendChild(c)});
+    p.appendChild(chips);
+    p.appendChild(el("p","dim mono",'<span style="font-size:12px;display:block;margin-top:10px">Новела не закінчується повним розкриттям. Торкніться запису, щоб побачити, що про нього відомо.</span>'));
+    const l=el("div","unk-l");l.style.marginTop="12px";
+    UNK.filter(x=>f==="all"||x[0]===f).forEach(x=>{
+      const q=el("button","q "+x[0]);q.type="button";q.innerHTML='<span class="tag '+(x[0]==="k"?"ok":"unk")+'">'+(x[0]==="k"?"Відомо":"Невідомо")+'</span><b style="margin-top:6px">'+esc(x[1])+'</b>';
+      let o=false;q.onclick=()=>{o=!o;const pp=$("p",q);if(pp)pp.remove();else q.appendChild(el("p","",esc(x[2])))};
+      l.appendChild(q);
+    });
+    p.appendChild(l);
+  }
+  draw();
+}};
+
+/* ---------- readme ---------- */
+APPS.txt={title:"README.txt",short:"README",w:600,h:560,build(b,rec){
+  const p=el("div","pad prose");
+  p.innerHTML='<h2>SideOnk</h2>'
+  +'<p>Психологічна візуальна новела про підлітка, який намагається зрозуміти, що відбувається навколо, але поступово втрачає можливість довіряти власній пам’яті. Заставинськ, сірі багатоповерхівки, мокрий асфальт, гаражі, ліцей №57 і чутки, що ростуть навколо.</p>'
+  +'<h3>Як тут грати</h3><ul><li>«20 днів» веде крізь історію: ранок, день, вечір, ніч. Щоб піти далі, дочитайте поточний момент: нові дні, чати й програми відкриваються по черзі. Текст гортають стрілки ← →.</li><li>Наприкінці історії відкриється «Факти»: перевірка, де ви відрізняєте факт від домислу.</li><li>Індикатор «Пам’ять» унизу падає з кожним днем збою сприйняття.</li><li>Вікна можна тягнути, згортати й розгортати. Esc закриває активне вікно.</li><li>Деякі програми реагують одна на одну: з досьє можна перейти на карту зв’язків і в чат.</li></ul>'
+  +'<h3>Правила цього світу</h3><ul><li>Усе показано очима Дані. Те, чого він не бачив і не чув, гравцеві не показують як факт.</li><li>Подія може бути підтвердженим фактом, суб’єктивним сприйняттям або невизначеною. Перевірте себе в програмі «Факти».</li></ul>'
+  ;
+  b.appendChild(p);
+}};
+
+/* ---------- desktop ---------- */
+const ICONS=[
+["cal","20 днів","i-cal","var(--white)",[1,0]],["dos","Досьє","i-dos","var(--danya)",[1,0]],["txt","README","i-txt","var(--dim)",[1,0]],
+["gtr","Гітара","i-gtr","var(--olya)",[1,2]],["note","Нотатки","i-note","var(--white)",[1,3]],
+["msn","Чати","i-msn","var(--roma)",[2,1]],["bal","Балкон","i-win","var(--other)",[2,1]],
+["rel","Зв’язки","i-rel","var(--olya)",[3,0]],["rum","Чутки","i-rum","var(--other)",[5,1]],["chk","Факти","i-chk","var(--ok)",[20,1]],
+["fd","Флешка","i-usb","var(--white)",[11,0]],["ph","Телефон","i-ph","var(--anya)",[11,1]],["unk","Невідоме","i-q","var(--unk)",[20,1]]
+];
+const nav=$("#icons");
+ICONS.forEach(i=>{
+  const bt=el("button","ico",'<svg aria-hidden="true"><use href="#'+i[2]+'"/></svg><span>'+i[1]+"</span>");
+  bt.type="button";bt.dataset.app=i[0];bt.style.setProperty("--c",i[3]);bt.onclick=()=>openApp(i[0]);nav.appendChild(bt);
+});
+function updateNow(){
+  const it=storyDay(cur.day,branch)||D1[10],n=$("#now");
+  const steps=(P.day-1)*4+P.ph+1,fresh=P.day===1&&P.ph===0&&visited.size<2&&!branch;
+  n.innerHTML='<small>День '+cur.day+' з 20 · '+PH[Math.min(cur.ph,3)]+'</small><b>'+esc(it.t)+'</b><div class="pg" role="progressbar" aria-valuemin="0" aria-valuemax="80" aria-valuenow="'+steps+'"><i style="width:'+(steps/.8)+'%"></i></div><small>'+(branch?"Опора: "+BNAME[branch]:"Опору ще не обрано")+'</small>';
+  const go=el("button","btn pri",fresh?"Почати історію":"Продовжити історію");go.type="button";go.onclick=()=>openApp("cal",{day:cur.day,ph:cur.ph});
+  n.appendChild(go);
+  if(!fresh){const rs=el("button","btn sm","Почати спочатку");rs.type="button";rs.onclick=()=>{
+    if(rs.dataset.c){Object.keys(open).forEach(closeApp);branch=null;visited=new Set([1]);P={day:1,ph:0};cur={day:1,ph:0};seenT={};store.set("sk-msn",{});Object.keys(ANS).forEach(k=>delete ANS[k]);Object.keys(POS).forEach(k=>delete POS[k]);store.set("sk-ans",{});store.set("sk-pos",{});store.set("sk-lastchat",null);store.set("sk-seen",{});seenD={};store.set("sk-seend",{});store.set("sk-dec",false);store.set("sk-open",false);store.set("sk-prof",{cur:null,s:{}});save();applyAccent();sky.rebuild();setSkyPhase(0);emit();toast("Все з початку. Нотатки, які ви дописали, лишилися.")}
+    else{rs.dataset.c=1;rs.textContent="Точно? Натисніть ще раз";setTimeout(()=>{rs.dataset.c="";rs.textContent="Почати спочатку"},2500)}};n.appendChild(rs)}
+  $("#sub").textContent="Комп’ютер Дані Німерова · Заставинськ · "+(P.day===1?"п’ятниця, дощ":"день "+cur.day+", дощ");
+  ICONS.forEach(i=>{const e=document.querySelector('.ico[data-app="'+i[0]+'"]');if(e)e.hidden=!reach(i[4][0],i[4][1])});
+  const nwf=(a,v)=>document.querySelector('.ico[data-app="'+a+'"]').classList.toggle("nw",v);
+  nwf("ph",P.day===11&&P.ph>=1&&!branch);
+  nwf("fd",(P.day>19||(P.day===19&&P.ph>=2))&&!!branch);
+  nwf("msn",THREADS.some(t=>reach(t.at[0],t.at[1])&&seenT[t.id]!==verT(t)));
+  nwf("dos",CH.some(x=>dosOpen(x)&&!seenD[x.n]));
+  nwf("cal",fresh);
+}
+hooks.add(updateNow);
+applyAccent();updateNow();drawMem();setSkyPhase(cur.ph);
+
+/* ---------- boot ---------- */
+(function(){
+  const boot=$("#boot"),bl=$("#bl"),lg=$("#lg"),bar=$("#bbar i"),pct=$("#bpct");
+  const stopB=rainOn($("#bcv"),91,.25,null,null,()=>3);
+  $("#bwho").textContent="Заставинськ · пароль збережено"+(P.day>1||P.ph>0?" · продовження: день "+cur.day:"");
+  const ST=[["SideOnk BIOS v0.20","ok","OK"],["кімнатна температура 17°C, вікно прочинене","ok","OK"],["пам’ять","warn","ЧАСТКОВО"],["журнал подій: розрив між записами","warn","ПРОПУЩЕНО"],["системник: вентилятор, шум 41 дБ","ok","OK"],["пристрій E:\\ не знайдено","err","НЕМАЄ"],["мережа: Заставинськ, сигнал слабкий","ok","OK"],["профіль: Даня Німеров","ok","OK"],["завантаження робочого столу","ok","OK"]];
+  let done=false,i=0,tmo=0;
+  function line(k,instant){const x=ST[k],d=el("div","fade","<span>"+esc(x[0])+"</span><span class=\""+x[1]+"\">"+x[2]+"</span>");bl.appendChild(d);
+    if(k===2&&!instant){const sp=d.firstChild;let m=0;const iv=setInterval(()=>{m+=2048;sp.textContent="пам’ять: "+Math.min(m,16384)+" КБ";if(m>=16384)clearInterval(iv)},40)}else if(k===2)d.firstChild.textContent="пам’ять: 16384 КБ";
+    const v=Math.round((k+1)/ST.length*100);bar.style.width=v+"%";pct.textContent=v+"%"}
+  function finish(){clearTimeout(tmo);while(i<ST.length)line(i++,true);lg.classList.add("on");$("#blogo").style.animation="none"}
+  function enter(){if(done)return;done=true;boot.classList.add("off");setTimeout(()=>{stopB();boot.remove()},800);if(innerWidth>720)openApp("cal",{day:cur.day,ph:cur.ph})}
+  $("#enter").onclick=e=>{e.stopPropagation();enter()};
+  boot.addEventListener("click",()=>{if(!lg.classList.contains("on"))finish()});
+  if(RM){finish();return}
+  (function nx(){if(done||lg.classList.contains("on"))return;if(i<ST.length){line(i++);tmo=setTimeout(nx,i===3?900:430)}else tmo=setTimeout(finish,500)})();
+  addEventListener("keydown",function k(e){if(e.key!=="Enter"||done)return;if(!lg.classList.contains("on"))finish();else{enter();removeEventListener("keydown",k)}});
+})();
+</script>
+<script id="fx-js">
+/* =====================================================================
+   FX MODULE (автономний): атмосферні шари, кінематографічні переходи,
+   звукові відгуки, HUD системника, записка від мами.
+   Працює поверх основного скрипта: читає його глобальні змінні/функції.
+   ===================================================================== */
+(function(){
+"use strict";
+try{
+const body=document.body,desk=document.getElementById("desk");
+const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const mk=(tag,id,html)=>{const e=document.createElement(tag);if(id)e.id=id;if(html!=null)e.innerHTML=html;return e};
+const WD=["Понеділок","Вівторок","Середа","Четвер","П’ятниця","Субота","Неділя"];
+const PHN=["Ранок","День","Вечір","Ніч"],CLOCK=["07:12","13:40","19:05","02:47"];
+const wd=d=>WD[(3+d)%7];
+
+/* ---------- шари: зерно, сканлайни, світло, перехід, титри ---------- */
+const grain=mk("div","grain");
+(function(){
+  const c=document.createElement("canvas");c.width=c.height=140;
+  const x=c.getContext("2d"),im=x.createImageData(140,140);
+  for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255|0;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*80|0}
+  x.putImageData(im,0,0);grain.style.backgroundImage="url("+c.toDataURL()+")";
+})();
+const crt=mk("div","crt"),glow=mk("div","glow"),cut=mk("div","cut"),lt=mk("div","lt");
+const card=mk("div","tcard");
+card.setAttribute("aria-hidden","true");
+[grain,crt,glow,cut,lt,card].forEach(e=>{e.setAttribute("aria-hidden","true");body.appendChild(e)});
+glow.style.transform="translate3d("+(innerWidth*.72-450)+"px,"+(innerHeight*.28-450)+"px,0)";
+card.addEventListener("animationend",e=>{if(e.target===card)card.className=""});
+card.addEventListener("click",()=>{card.className=""});
+
+/* заголовок: дані для хроматичного глітча */
+const h1=document.querySelector(".top h1");if(h1)h1.dataset.t=h1.textContent;
+/* іконки: ступінчасте з'явлення */
+document.querySelectorAll(".ico").forEach((e,i)=>e.style.setProperty("--i",i));
+
+/* ---------- світло курсора + паралакс неба ---------- */
+if(!matchMedia("(hover:none)").matches){
+  let px=0,py=0,pend=false;
+  addEventListener("pointermove",e=>{
+    if(e.pointerType==="touch"||e.buttons)return;
+    px=e.clientX;py=e.clientY;
+    if(pend)return;pend=true;
+    requestAnimationFrame(()=>{
+      pend=false;
+      glow.style.transform="translate3d("+(px-450)+"px,"+(py-450)+"px,0)";
+      if(!rm){const s=document.getElementById("sky");
+        if(s)s.style.transform="translate3d("+(-(px/innerWidth-.5)*22).toFixed(1)+"px,"+(-(py/innerHeight-.5)*14).toFixed(1)+"px,0) scale(1.05)"}
+    });
+  },{passive:true});
+}
+
+/* ---------- звук інтерфейсу (тихий, вимикається кнопкою UI) ---------- */
+let sfxOn=store.get("sk-sfx",true);
+const A=()=>{try{return(navigator.userActivation&&!navigator.userActivation.hasBeenActive)?null:actx()}catch(e){return null}};
+function blip(f,d,type,v,slide){
+  if(!sfxOn)return;const a=A();if(!a)return;
+  const t=a.currentTime,o=a.createOscillator(),g=a.createGain();
+  o.type=type||"sine";o.frequency.setValueAtTime(f,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.03);
+}
+function burst(d,v,fc){
+  if(!sfxOn)return;const a=A();if(!a)return;
+  const n=Math.max(1,Math.floor(a.sampleRate*d)),buf=a.createBuffer(1,n,a.sampleRate),ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);
+  const s=a.createBufferSource();s.buffer=buf;
+  const f=a.createBiquadFilter();f.type="bandpass";f.frequency.value=fc||1800;f.Q.value=.8;
+  const g=a.createGain();g.gain.value=v;s.connect(f);f.connect(g);g.connect(a.destination);s.start();
+}
+const S={
+  tick(){blip(2300,.035,"triangle",.018,.45)},
+  open(){blip(260,.2,"sine",.04,2.2);burst(.08,.02,2600)},
+  close(){blip(520,.15,"sine",.03,.5)},
+  cut(){blip(78,.55,"sine",.08,.5)},
+  day(){blip(52,1.2,"sine",.12,.7);blip(104,1,"triangle",.03,.5)},
+};
+addEventListener("pointerdown",e=>{
+  if(e.target.closest&&e.target.closest(".btn,.chip,.ico,.day,.tk,.contact,.card,.q,.hot,.nd,#mem,#rain,#noise,#sfx"))S.tick();
+},true);
+const sb=mk("button","sfx","UI");sb.type="button";
+sb.setAttribute("aria-pressed",String(!!sfxOn));sb.title="Звуки інтерфейсу";
+sb.onclick=()=>{sfxOn=!sfxOn;store.set("sk-sfx",sfxOn);sb.setAttribute("aria-pressed",String(sfxOn));if(sfxOn)S.tick()};
+const rainBtn=document.getElementById("rain");
+if(rainBtn&&rainBtn.parentNode)rainBtn.parentNode.insertBefore(sb,rainBtn);
+/* ---------- мобільне меню «⋯»: дощ / шум / UI не займають місце в панелі ---------- */
+const more=mk("button","more","···"),menu=mk("div","moremenu");
+more.type="button";more.setAttribute("aria-label","Ще");more.setAttribute("aria-expanded","false");
+const barEl=document.getElementById("bar"),clockEl=document.getElementById("clock");
+barEl.insertBefore(more,clockEl);body.appendChild(menu);
+const toggles=["rain","noise","sfx"].map(i=>document.getElementById(i)).filter(Boolean);
+const mq=matchMedia("(max-width:720px)");
+function place(){
+  if(mq.matches){toggles.forEach(t=>menu.appendChild(t))}
+  else{toggles.forEach(t=>barEl.insertBefore(t,more));menu.classList.remove("on");more.setAttribute("aria-expanded","false")}
+}
+mq.addEventListener("change",place);place();
+more.onclick=e=>{e.stopPropagation();const on=menu.classList.toggle("on");more.setAttribute("aria-expanded",String(on))};
+addEventListener("pointerdown",e=>{if(menu.classList.contains("on")&&!e.target.closest("#moremenu,#more")){menu.classList.remove("on");more.setAttribute("aria-expanded","false")}});
+/* відкриття / закриття вікон */
+new MutationObserver(ms=>ms.forEach(m=>{
+  m.addedNodes.forEach(n=>{if(n.classList&&n.classList.contains("win"))setTimeout(S.open,90)});
+  m.removedNodes.forEach(n=>{if(n.classList&&n.classList.contains("win"))setTimeout(S.close,0)});
+})).observe(document.getElementById("wins"),{childList:true});
+
+/* ---------- титри дня, нижня третина, «монтажний» перехід ---------- */
+const esc2=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+function restart(e,cls){e.classList.remove(cls);void e.offsetWidth;e.classList.add(cls)}
+function titleCard(d,ph){
+  const it=storyDay(d,branch),g=!!(it&&it.g);
+  const nm=d<10?"0"+d:""+d;
+  const meta=wd(d)+" · "+PHN[ph]+(d>11&&branch?" · "+BNAME[branch]:"");
+  card.className="";void card.offsetWidth;
+  card.innerHTML='<i class="bar t"></i><i class="bar b"></i><div class="tc-in"><small>'+esc2(meta)+'</small><b class="tc-n">ДЕНЬ '+nm+'</b><span class="tc-t">'+esc2(it?it.t:"")+'</span>'+(g?'<em>збій сприйняття</em>':"")+'</div>';
+  card.className="on";
+  S.day();
+}
+function lower(d,ph){
+  lt.innerHTML="<b>"+CLOCK[ph]+"</b><span>"+PHN[ph]+" · "+wd(d)+"</span>";
+  restart(lt,"on");
+}
+function doCut(){restart(cut,"on");S.cut()}
+cut.addEventListener("animationend",e=>{if(e.target===cut)cut.classList.remove("on")});
+lt.addEventListener("animationend",e=>{if(e.target===lt)lt.classList.remove("on")});
+
+let last={d:cur.day,p:cur.ph},started=false;
+function trustUI(){
+  const t=trust();
+  body.dataset.tr=t>70?"hi":t>45?"mid":"lo";
+}
+function onChange(){
+  trustUI();
+  if(!started||(cur.day===last.d&&cur.ph===last.p))return;
+  const fwd=cur.day>last.d||(cur.day===last.d&&cur.ph>last.p),dayCh=cur.day!==last.d;
+  last={d:cur.day,p:cur.ph};
+  if(dayCh&&fwd)titleCard(cur.day,cur.ph);
+  else{doCut();lower(cur.day,cur.ph)}
+}
+hooks.add(onChange);trustUI();
+/* старт: коли зникне екран завантаження */
+const bw=setInterval(()=>{
+  if(document.getElementById("boot"))return;
+  clearInterval(bw);started=true;last={d:cur.day,p:cur.ph};
+  setTimeout(()=>titleCard(cur.day,cur.ph),250);
+},300);
+
+
+/* ---------- HUD системника ---------- */
+const hud=mk("div","hud");hud.setAttribute("aria-hidden","true");desk.appendChild(hud);
+function hudTick(){
+  const t=trust(),d=cur.day,lo=100-t;
+  const fan=Math.round(1380+d*38+lo*6+Math.random()*90);
+  const temp=Math.round(51+d*.7+lo*.12+Math.random()*2);
+  const sig=-60-(Math.random()*6|0)-Math.round(lo/8);
+  const e=reach(11,0)?(P.day>19||(P.day===19&&P.ph>=2)?"розшифр.":"контейнер"):"немає";
+  hud.innerHTML='<div><span>FAN</span><b>'+fan+'</b> rpm</div><div><span>CPU</span><b>'+temp+'</b> °C</div><div><span>NET</span><b>'+sig+'</b> dBm</div><div><span>E:\\</span><b>'+e+'</b></div><i class="hb"><i style="width:'+Math.max(4,Math.min(100,(fan-1300)/6))+'%"></i></i>';
+}
+hudTick();setInterval(hudTick,1600);hooks.add(hudTick);
+
+/* ---------- записка від мами на монітор ---------- */
+const post=mk("div","postit");post.setAttribute("aria-hidden","true");desk.appendChild(post);
+function postTick(){
+  let t=null;
+  if(reach(15,1))t="Зайшла вночі,\nти спав у навушниках.\nЇж нормально.\n— мама";
+  else if(reach(11,3))t="Дзвонила тобі\nкілька разів.\nУвімкни телефон.\n— мама";
+  else if(reach(8,2))t="Ти якийсь змучений.\nПоспи хоч день.\n— мама";
+  else if(reach(1,2))t="Борщ у холодильнику.\nНе сиди до ранку.\n— мама";
+  post.hidden=!t;if(t&&post.textContent!==t)post.textContent=t;
+}
+postTick();hooks.add(postTick);
+
+}catch(err){console.warn("SideOnk FX:",err)}
+})();
+
+</script>
+
+</body></html>
